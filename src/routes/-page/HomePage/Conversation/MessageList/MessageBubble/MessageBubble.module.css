@@ -1,9 +1,19 @@
-.fromUser {
-  background-color: var(--mantine-color-blue-light);
-  margin-inline-start: var(--mantine-spacing-xl);
+.userRow {
+  display: flex;
+  justify-content: flex-end;
 }
 
-.fromAssistant {
-  background-color: var(--mantine-color-body);
-  margin-inline-end: var(--mantine-spacing-xl);
+/* Capped well short of the column so a right-aligned bubble still reads as one
+   side of a conversation rather than a full-width block. */
+.userBubble {
+  max-width: 80%;
+  background-color: light-dark(
+    var(--mantine-color-gray-1),
+    var(--mantine-color-dark-6)
+  );
+}
+
+.assistantTurn {
+  /* No bubble and no tint: the reply is the page's body text. */
+  width: 100%;
 }

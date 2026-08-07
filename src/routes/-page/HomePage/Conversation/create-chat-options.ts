@@ -3,7 +3,6 @@ import {
   fetchServerSentEvents,
   type InferChatMessages,
   localStoragePersistence,
-  type UseChatReturn,
 } from '@tanstack/ai-react'
 
 // Module-level, because `useChat` reads the transport once — the connection it
@@ -48,10 +47,3 @@ export type ConversationMessage = InferChatMessages<
 >[number]
 
 export type ConversationMessagePart = ConversationMessage['parts'][number]
-
-/**
- * Read off the hook's own return rather than imported from `@tanstack/ai-client`
- * — that package is a transitive dependency of `@tanstack/ai-react`, and naming
- * it directly would take a dependency this project never declared.
- */
-export type ConversationStatus = UseChatReturn['status']

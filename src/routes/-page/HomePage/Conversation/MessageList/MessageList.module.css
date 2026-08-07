@@ -1,0 +1,53 @@
+/* Positioning context for the jump-to-latest button, which has to float over
+   the transcript rather than scroll away with it. */
+.root {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.viewport {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* `min-height: 100%` so an empty conversation can centre its greeting in the
+   whole viewport, and so a short conversation still sits against the composer. */
+.content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: var(--mantine-breakpoint-sm);
+  margin-inline: auto;
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-md);
+}
+
+.greeting {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.turns {
+  flex: 0 0 auto;
+}
+
+.jumpToLatest {
+  position: absolute;
+  bottom: var(--mantine-spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 1;
+  transition: opacity 150ms ease;
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jumpToLatest {
+    transition: none;
+  }
+}

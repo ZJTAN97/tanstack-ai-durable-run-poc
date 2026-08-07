@@ -1,0 +1,26 @@
+/* Never shrinks and never scrolls: the transcript above absorbs the whole
+   conversation's growth, so this stays where the user last used it. */
+.root {
+  flex: 0 0 auto;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md)
+    var(--mantine-spacing-md);
+  background-color: var(--mantine-color-body);
+  border-top: 1px solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  max-width: var(--mantine-breakpoint-sm);
+  margin-inline: auto;
+}
+
+/* One input surface, with the send control sitting inside it. */
+.surface {
+  background-color: light-dark(
+    var(--mantine-color-white),
+    var(--mantine-color-dark-6)
+  );
+}

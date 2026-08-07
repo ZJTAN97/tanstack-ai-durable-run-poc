@@ -1,8 +1,8 @@
-import { Container, Stack, Text, Title } from '@mantine/core'
 import { getRouteApi } from '@tanstack/react-router'
 
+import { ChatHeader } from './ChatHeader/ChatHeader'
 import { Conversation } from './Conversation/Conversation'
-import { ThreadIdentity } from './ThreadIdentity/ThreadIdentity'
+import classes from './HomePage.module.css'
 
 // Read through the route api rather than importing the route: the route already
 // imports this component, and importing it back would close the cycle.
@@ -12,24 +12,13 @@ export function HomePage() {
   const { threadId } = homeRoute.useSearch()
 
   return (
-    <Container size="sm" py="xl">
-      <Stack gap="lg">
-        <Stack gap="xs">
-          <Title order={1}>TanStack AI durable run POC</Title>
-          <Text c="dimmed">
-            An AI run should outlive the connection that started it. This page
-            carries the conversation's identity in its URL, so a reload lands
-            back in the same conversation instead of starting a new one.
-          </Text>
-        </Stack>
+    <div className={classes.shell}>
+      <ChatHeader />
 
-        <ThreadIdentity threadId={threadId} />
-
-        {/* Keyed on the thread id so switching conversations builds a fresh
-            chat client against the new one, rather than carrying the previous
-            conversation's transcript into it. */}
-        <Conversation key={threadId} threadId={threadId} />
-      </Stack>
-    </Container>
+      {/* Keyed on the thread id so switching conversations builds a fresh
+          chat client against the new one, rather than carrying the previous
+          conversation's transcript into it. */}
+      <Conversation key={threadId} threadId={threadId} />
+    </div>
   )
 }

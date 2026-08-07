@@ -1,8 +1,10 @@
-import { Badge, Code, Stack, Text } from '@mantine/core'
+import { Badge, Text } from '@mantine/core'
 
 import type { ConversationMessagePart } from '../../../create-chat-options'
 
 import classes from './MessagePartView.module.css'
+import { ThoughtProcess } from './ThoughtProcess/ThoughtProcess'
+import { ToolActivity } from './ToolActivity/ToolActivity'
 
 /**
  * One part of a message, rendered according to what it actually is.
@@ -22,45 +24,28 @@ export function MessagePartView({ part }: { part: ConversationMessagePart }) {
       return <Text className={classes.body}>{part.content}</Text>
 
     case 'thinking':
-      return (
-        <Stack gap={4}>
-          <Badge size="xs" variant="light" color="grape">
-            reasoning
-          </Badge>
-          <Text className={classes.body} size="sm" c="dimmed" fs="italic">
-            {part.content}
-          </Text>
-        </Stack>
-      )
+      return <ThoughtProcess reasoning={part.content} />
 
     case 'tool-call':
       return (
-        <Stack gap={4}>
-          <Badge size="xs" variant="light" color="blue">
-            tool call — {part.name}
-          </Badge>
-          <Code block className={classes.body}>
-            {part.arguments}
-          </Code>
-        </Stack>
+        <ToolActivity
+          label={`Used ${part.name}`}
+          color="blue"
+          payload={part.arguments}
+        />
       )
 
     case 'tool-result':
       return (
-        <Stack gap={4}>
-          <Badge
-            size="xs"
-            variant="light"
-            color={part.error === undefined ? 'teal' : 'red'}
-          >
-            tool result
-          </Badge>
-          <Code block className={classes.body}>
-            {typeof part.content === 'string'
+        <ToolActivity
+          label={part.error === undefined ? 'Tool result' : 'Tool failed'}
+          color={part.error === undefined ? 'teal' : 'red'}
+          payload={
+            typeof part.content === 'string'
               ? part.content
-              : JSON.stringify(part.content, null, 2)}
-          </Code>
-        </Stack>
+              : JSON.stringify(part.content, null, 2)
+          }
+        />
       )
 
     default:

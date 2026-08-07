@@ -1,0 +1,17 @@
+.toggle {
+  border-radius: var(--mantine-radius-xl);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.payload {
+  width: 100%;
+}
+
+.code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

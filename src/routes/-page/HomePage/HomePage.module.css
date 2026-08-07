@@ -1,0 +1,8 @@
+/* The whole app is one viewport-tall column: a fixed header, and a conversation
+   that takes the rest. `dvh` rather than `vh` so a mobile browser's collapsing
+   toolbar does not push the composer off the bottom of the screen. */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
