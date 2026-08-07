@@ -16,7 +16,22 @@ import { memoryStream, type StreamDurability } from '@tanstack/ai'
  * The in-memory backend keeps its logs in a process-global map, so it survives
  * a dropped connection and a page reload but not a server restart, and it
  * cannot be shared across processes. It proves reconnect, not durability.
+ *
+ * A resumer passes the request alone: which run it wants is written on the
+ * request, as an offset that encodes its own run or an explicit run id.
+ *
+ * A producer passes the run it is starting, because that identity lives in the
+ * request *body* and the request alone cannot reveal it. Left to the request, a
+ * backend mints an id of its own — and a run logged under an id the client
+ * never learns is unrejoinable from the moment it starts, silently. This
+ * argument is the run's own identity, not a backend detail: every backend keys
+ * its log by run id, including the Postgres one that replaces this.
  */
-export function streamStore(request: Request): StreamDurability {
-  return memoryStream(request)
+export function streamStore(
+  request: Request,
+  producedRunId?: string,
+): StreamDurability {
+  return producedRunId === undefined
+    ? memoryStream(request)
+    : memoryStream({ runId: producedRunId })
 }
