@@ -3,7 +3,7 @@ import {
   MantineProvider,
   mantineHtmlProps,
 } from '@mantine/core'
-import '@mantine/core/styles.css'
+import '@mantine/core/styles.layer.css'
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 
 import { theme } from '@/theme'
