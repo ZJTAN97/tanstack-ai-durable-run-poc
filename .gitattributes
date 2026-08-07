@@ -1,0 +1,6 @@
+# Biome formats with LF. Without this, a Windows checkout produces CRLF files
+# that Biome immediately rewrites, so `pnpm lint` fails on a fresh clone.
+* text=auto eol=lf
+
+pnpm-lock.yaml linguist-generated=true
+src/routeTree.gen.ts linguist-generated=true
