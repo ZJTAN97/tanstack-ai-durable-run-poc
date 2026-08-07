@@ -1,5 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { HomePage } from './-page/HomePage'
+import { threadSearchSchema } from '@/schema/thread'
 
-export const Route = createFileRoute('/')({ component: HomePage })
+import { HomePage } from './-page/HomePage/HomePage'
+import { InvalidThreadNotice } from './-page/InvalidThreadNotice/InvalidThreadNotice'
+
+export const Route = createFileRoute('/')({
+  validateSearch: threadSearchSchema,
+  component: HomePage,
+  errorComponent: InvalidThreadNotice,
+})
