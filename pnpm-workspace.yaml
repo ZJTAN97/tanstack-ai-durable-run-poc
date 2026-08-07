@@ -1,3 +1,8 @@
 allowBuilds:
+  # Its only install script is an optional type-availability check; the
+  # published package already ships compiled output.
+  '@openrouter/sdk': false
   esbuild: true
   lightningcss: true
+minimumReleaseAgeExclude:
+  - '@tanstack/ai@0.43.1'
