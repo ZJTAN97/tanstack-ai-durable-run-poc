@@ -9,6 +9,8 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@mantine/core": "^9.5.1",
+    "@mantine/hooks": "^9.5.1",
     "@tanstack/react-router": "^1.170.20",
     "@tanstack/react-start": "^1.168.37",
     "react": "^19.2.0",
@@ -20,6 +22,8 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "postcss": "^8.5.25",
+    "postcss-preset-mantine": "^1.18.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0"
   }

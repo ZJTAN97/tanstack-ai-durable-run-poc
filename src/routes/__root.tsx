@@ -1,6 +1,12 @@
+import {
+  ColorSchemeScript,
+  MantineProvider,
+  mantineHtmlProps,
+} from '@mantine/core'
+import '@mantine/core/styles.css'
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 
-import appCss from '@/styles.css?url'
+import { theme } from '@/theme'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,24 +22,21 @@ export const Route = createRootRoute({
         title: 'TanStack AI durable run POC',
       },
     ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
   }),
   shellComponent: RootDocument,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" {...mantineHtmlProps}>
       <head>
+        <ColorSchemeScript defaultColorScheme="auto" />
         <HeadContent />
       </head>
       <body>
-        {children}
+        <MantineProvider theme={theme} defaultColorScheme="auto">
+          {children}
+        </MantineProvider>
         <Scripts />
       </body>
     </html>
