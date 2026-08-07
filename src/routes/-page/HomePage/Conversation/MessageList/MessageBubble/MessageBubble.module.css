@@ -1,0 +1,9 @@
+.fromUser {
+  background-color: var(--mantine-color-blue-light);
+  margin-inline-start: var(--mantine-spacing-xl);
+}
+
+.fromAssistant {
+  background-color: var(--mantine-color-body);
+  margin-inline-end: var(--mantine-spacing-xl);
+}

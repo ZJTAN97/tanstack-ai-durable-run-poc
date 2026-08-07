@@ -1,6 +1,7 @@
 import { Container, Stack, Text, Title } from '@mantine/core'
 import { getRouteApi } from '@tanstack/react-router'
 
+import { Conversation } from './Conversation/Conversation'
 import { ThreadIdentity } from './ThreadIdentity/ThreadIdentity'
 
 // Read through the route api rather than importing the route: the route already
@@ -23,6 +24,11 @@ export function HomePage() {
         </Stack>
 
         <ThreadIdentity threadId={threadId} />
+
+        {/* Keyed on the thread id so switching conversations builds a fresh
+            chat client against the new one, rather than carrying the previous
+            conversation's transcript into it. */}
+        <Conversation key={threadId} threadId={threadId} />
       </Stack>
     </Container>
   )

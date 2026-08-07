@@ -1,0 +1,6 @@
+/* Model output arrives with its own line breaks, and a counted list is
+   unreadable without them. */
+.body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
