@@ -5,6 +5,12 @@ const environmentSchema = z.object({
     .string()
     .min(1, 'required — create a key at https://openrouter.ai/keys'),
   APP_URL: z.url().default('http://localhost:3000'),
+  DATABASE_URL: z
+    .url()
+    .startsWith(
+      'postgres',
+      'must be a postgres:// or postgresql:// connection string',
+    ),
 })
 
 const parsedEnvironment = environmentSchema.safeParse(process.env)

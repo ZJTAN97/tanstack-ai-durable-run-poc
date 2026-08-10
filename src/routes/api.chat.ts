@@ -9,6 +9,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { resumeRunRequestSchema, startRunRequestSchema } from '@/schema/chat'
 import { textAdapter } from '@/server/ai/adapter'
+import { resolveResumeOffset } from '@/server/ai/resume-position'
 import { streamStore } from '@/server/ai/stream-store'
 
 function badRequest(reason: string) {
@@ -16,21 +17,6 @@ function badRequest(reason: string) {
     status: 400,
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   })
-}
-
-/**
- * Where a resume says it wants to start from.
- *
- * Mirrors the precedence the durability adapter itself applies — including its
- * truthiness test, so that an empty `Last-Event-ID` falls through to `?offset`
- * here exactly as it does there. Its own implementation is not exported, and
- * two disagreeing readings of the same request would reject resumes the
- * transport would have served.
- */
-function resolveResumeOffset(request: Request) {
-  const header = request.headers.get('Last-Event-ID')
-
-  return header || new URL(request.url).searchParams.get('offset')
 }
 
 /**
@@ -87,7 +73,19 @@ export const Route = createFileRoute('/api/chat')({
           return badRequest(z.prettifyError(parsedResume.error))
         }
 
-        return resumeServerSentEventsResponse({ adapter: streamStore(request) })
+        // The offset's format belongs to the log, not to this route, so the
+        // only place it can be judged is where the store reads it. A position
+        // the store refuses to accept is a bad request, not a server fault —
+        // catching it here keeps that legible without naming a backend.
+        try {
+          return resumeServerSentEventsResponse({
+            adapter: streamStore(request),
+          })
+        } catch (rejection) {
+          return badRequest(
+            rejection instanceof Error ? rejection.message : String(rejection),
+          )
+        }
       },
     },
   },

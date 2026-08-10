@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "vite dev --port 3000 --strictPort",
     "build": "vite build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
     "lint": "biome check",
     "format": "biome format --write"
   },
@@ -16,6 +19,8 @@
     "@tanstack/ai-react": "0.19.1",
     "@tanstack/react-router": "^1.170.20",
     "@tanstack/react-start": "^1.168.37",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "4.4.3"
@@ -23,9 +28,11 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "drizzle-kit": "^0.31.10",
     "postcss": "^8.5.25",
     "postcss-preset-mantine": "^1.18.0",
     "typescript": "^6.0.2",

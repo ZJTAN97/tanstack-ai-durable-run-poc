@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: durable-run-poc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: durable_run
+      POSTGRES_PASSWORD: durable_run
+      POSTGRES_DB: durable_run
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # The app parses DATABASE_URL at boot and opens a pool on the first request,
+    # so a container that is up but not yet accepting connections would surface
+    # as a connection error rather than a wait. Gate readiness on the server.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U durable_run -d durable_run']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

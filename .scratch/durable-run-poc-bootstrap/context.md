@@ -20,7 +20,7 @@ architecture and a clearer demonstration of durability, choose the latter.
 | Tier | Claim | Status in this bootstrap |
 | :--- | :--- | :--- |
 | 1 | Client disconnects or reloads while the server process stays up; the run keeps producing and the client rejoins | **In scope.** Works with the in-memory backend alone. |
-| 2 | A finished run's log outlives the process and replays after a restart | **Next phase.** Needs the Postgres backend. |
+| 2 | A finished run's log outlives the process and replays after a restart | **Ticket 09.** The Postgres run log. |
 | 3 | The server dies mid-run and another process takes the run over and finishes it | **Out of scope.** See below. |
 
 **Tier 3 is not what Postgres buys you.** If the process dies mid-run the
@@ -43,6 +43,12 @@ clients would then tail one run through uncoordinated connections. That is a
 demo that works by accident. It is deferred to server-authoritative
 persistence and is not claimed anywhere in the UI or docs.
 
+Note that **ticket 10 does not close this**, and neither would the
+server-authoritative flip that follows it. What changes is that the transcript
+stops being the shared mutable thing two tabs fight over; two clients tailing
+one run through two connections is unaffected. Do not read either ticket as
+claiming the second tab.
+
 ---
 
 ## 2. Decisions taken, and why
@@ -62,6 +68,30 @@ seems to require it, stop and raise it.
 | **Full folder ceremony** per `CLAUDE.md` §9 | Owner's explicit instruction, chosen over a flatter layout. Folder per component, each with its own module stylesheet where styling is genuinely needed. |
 | **Scaffold via the CLI**, not hand-rolled | The Vite/Start plugin wiring is fiddly and fails confusingly. Take it from the generator. The owner has previously had this CLI force in Tailwind despite opting out — **ticket 01 requires this be checked and reported, not assumed.** |
 
+### Two of these are now deliberately reversed
+
+This section asks that a decision not be silently reversed, and that a ticket
+requiring one stop and raise it. Tickets 09 and 10 do require it. Raised here:
+
+**"No Postgres / Drizzle / Docker in this phase" — reversed by ticket 09.** The
+rationale was that nothing read them, and a compose file backing a database with
+no tables is friction on every dev-server start. That rationale has expired
+rather than been overruled: the tables now have a reader, and the tier-2 claim
+cannot be made without them.
+
+**"Client-side persistence, not server-authoritative" — partially reversed by
+ticket 10, on purpose.** Ticket 10 adds the server's copy but leaves the browser
+authoritative, so the cost this decision accepted (the second-tab case) is still
+being paid and is still not claimed. The full flip is a further ticket, deferred
+on two concrete grounds: the endpoint's GET is already the resume handler and a
+hydrate route wants its own verb, and a server-authoritative client posts an
+empty message list, which `startRunRequestSchema` currently forbids.
+
+**Still standing, and worth restating because ticket 09 makes it tempting:** no
+`runs_.$runId/` route, one page at `/`, thread id in a validated search param.
+Persisting runs to a database does not make a run id routable — it is still
+minted per turn and a thread can hold many.
+
 ---
 
 ## 3. Verified API facts
@@ -72,21 +102,26 @@ believe about the API, the package won.
 
 ### Versions confirmed on npm
 
-| Package | Version |
-| :--- | :--- |
-| `@tanstack/ai` | 0.43.0 |
-| `@tanstack/ai-react` | 0.19.0 |
-| `@tanstack/ai-client` | 0.23.0 |
-| `@tanstack/ai-openrouter` | 0.15.11 |
-| `@tanstack/react-start` | 1.168.38 |
-| `@tanstack/react-router` | 1.170.21 |
-| `@mantine/core` | 9.5.1 |
-| `vite` | 8.2.1 |
+| Package | Planned at bootstrap | Actually installed |
+| :--- | :--- | :--- |
+| `@tanstack/ai` | 0.43.0 | **0.43.1** |
+| `@tanstack/ai-react` | 0.19.0 | **0.19.1** |
+| `@tanstack/ai-client` | 0.23.0 | **0.23.1** (transitive) |
+| `@tanstack/ai-openrouter` | 0.15.11 | 0.15.11 |
+| `@tanstack/react-start` | 1.168.38 | `^1.168.37` |
+| `@tanstack/react-router` | 1.170.21 | `^1.170.20` |
+| `@mantine/core` | 9.5.1 | `^9.5.1` |
+| `vite` | 8.2.1 | `^8.0.0` |
+
+The AI packages resolved one patch above the planned versions. Line numbers cited
+elsewhere in this file are read from **0.43.1**, which is what is in the tree.
 
 `@tanstack/ai` ships its own `src/` **and a `skills/` directory** of
 authoritative docs (`skills/ai-core/…`). When in doubt about the API, read those
 before searching the web — `client-persistence/SKILL.md` and
-`chat-experience/SKILL.md` are the relevant ones here.
+`chat-experience/SKILL.md` are the relevant ones here. `@tanstack/ai-persistence`
+ships a `skills/ai-persistence/` tree the same way, including the Drizzle recipe
+ticket 10 depends on.
 
 ### Two layers, both required
 
@@ -170,6 +205,71 @@ discovered late. `CLAUDE.md` §4 describes only the `read` contract.
 Returning an empty read while the producer lives ends the response and surfaces
 to the client as a "stream incomplete" error.
 
+### A terminal chunk does NOT end a read — `close()` does
+
+Read directly from `@tanstack/ai@0.43.1`'s
+`src/stream-durability.ts:505-510`, and the single most dangerous thing in
+`CLAUDE.md` for ticket 09 to be implemented from:
+
+> A terminal chunk (RUN_FINISHED / RUN_ERROR) does NOT end the read: an
+> agent-loop run emits one per iteration (finishReason "tool_calls" then "stop"),
+> so stopping on the first would truncate a tool-calling run at its first tool
+> call. The producer signals true completion by calling `close()`.
+
+`CLAUDE.md` §4 instructs the opposite — "Stop at a terminal chunk (`RUN_FINISHED`
+/ `RUN_ERROR`)". Implemented as written, every reasoning-then-answering and
+tool-calling reply would replay only its first segment on rejoin. Our model
+reasons before answering, so that failure is reachable today. Terminalisation is
+a property of the log, set by `close()`, which the producer calls on **every**
+exit including cancellation and failure. See §4 override 5.
+
+### Also verified: `read()` and `snapshot()` must fail differently
+
+Same file. `read('-1')` on an empty or unknown log **may** throw;
+`snapshot()` on an unknown run **may not** — it must resolve to `[]`. An
+implementation that routes both through one unknown-run path is wrong in one
+direction or the other. The reference backend peeks rather than creating in both,
+because inserting a row on read would leave a phantom log that no sweep reclaims.
+
+### Chat state is a second package, and it owns no tables
+
+Relevant to ticket 10. Verified on npm and by reading the tarball, not recalled.
+
+| Package | Version | Note |
+| :--- | :--- | :--- |
+| `@tanstack/ai-persistence` | 0.1.1 | **Pins `@tanstack/ai` to exactly `0.43.1`** — a core bump is a coordinated upgrade |
+| `@tanstack/ai-durable-stream` | 0.1.0 | **Not what it sounds like** — see below |
+
+- Both were published days before this planning session. Treat them as new.
+- The package ships the four chat store contracts (`MessageStore`, `RunStore`,
+  `InterruptStore`, `MetadataStore`), the `withPersistence` middleware,
+  `reconstructChat`, an in-memory reference backend, and a conformance testkit.
+  It ships **zero tables, zero migrations, and no ORM dependency** — verified by
+  searching the whole `@tanstack/` tree for `CREATE TABLE`, `.sql`, and
+  `.prisma`: no matches. Its own words: *"Persistence is a contract, not a
+  database… You own the schema. No package invents migrations for you."*
+- It bundles a **Drizzle recipe** at
+  `skills/ai-persistence/build-drizzle-adapter/SKILL.md` with the full store
+  bodies and the Postgres column choices. Read it before writing the adapter;
+  the idempotency comments in it mark the rules the conformance kit checks.
+- `RunStore` and `RunRecord` live in **core**, not this package, deliberately
+  shared with `@tanstack/ai-sandbox` so there is one definition of a run.
+- **`@tanstack/ai-durable-stream` is not a Postgres backend.** Its own
+  description: *"a resumable `StreamDurability` transport sink […] that stores
+  **zero** delivery events itself."* It is a client for an external
+  durable-streams HTTP service. A database-backed run log is ours to write; this
+  package is not a shortcut to ticket 09.
+- `MessageStore` is only two methods, and `saveThread` is a **full overwrite** —
+  the argument is the complete authoritative transcript, with no diff
+  information. Any row-per-message schema must rewrite the thread's rows.
+- `ModelMessage.id` is **optional** (`core src/types.ts:378`). It is not a
+  guaranteed per-message key, so a diff-based save path cannot rely on it
+  without first verifying it survives the client round-trip.
+- The authoritative-history contract is decided by the request's message list:
+  **non-empty** means the client is authoritative and the server overwrites its
+  copy; **empty** means continue from the server's copy. Never post a delta —
+  that truncates the stored thread down to the delta.
+
 ### Status fields available for the panel (ticket 07)
 
 The chat hook already returns everything the panel needs — no custom state:
@@ -195,6 +295,22 @@ shipped packages and found wrong or incomplete.
 4. **§4 "memoryStream … proves reconnect, not durability; the POC's actual claim
    requires the Postgres-backed run log."** Partially wrong — see the tier table
    in §1.
+5. **§4 "Stop at a terminal chunk (`RUN_FINISHED` / `RUN_ERROR`)."** Wrong, and
+   the most consequential of the five. The library says a terminal chunk does
+   **not** end a read; `close()` terminalises the log. Implementing the bullet as
+   written truncates every tool-calling and reasoning-then-answering reply at its
+   first segment on rejoin. See §3. `CLAUDE.md` is deliberately **not** edited —
+   this list is the project's record of divergence, and it is the file to trust
+   when the two disagree.
+
+`CLAUDE.md` §5's Postgres guidance is otherwise sound and tickets 09 and 10 follow
+it: one pooled client cached on `globalThis` (Vite HMR leaks a pool per save
+without it), tables under `src/server/db/schema/` one file per domain, migrations
+generated and committed and never hand-edited, `drizzle-kit push` avoided, and
+Drizzle owning row types while Zod owns the network boundary. The one permitted
+deviation is `drizzle.config.ts` reading `process.env.DATABASE_URL` directly
+instead of through `src/server/env.ts`, because that module throws on a missing
+`OPENROUTER_API_KEY` and a migration has no business needing a model key.
 
 Everything else in `CLAUDE.md` stands, in particular: the client/server
 boundary (§3), boundary validation with Zod (§2), the anti-effect rules (§7),
@@ -211,11 +327,29 @@ Tickets are in `issues/`, numbered in dependency order.
 01 scaffold ──┬── 02 mantine shell ────── 05 home route ──┐
               │                                           ├── 06 chat UI ── 07 panel + handover
               └── 03 server boundary ── 04 chat endpoint ─┘
+                                                          │
+                                             08 chat UI revamp
+                                                          │
+                                    09 postgres run log ── 10 server chat state
 ```
 
 **02 and 03 are parallel** after 01. Tickets **01 through 05 need no API key**.
 Ticket 04 produces real durability evidence — the `400` contract and the
 unknown-run failure — before any UI exists.
+
+**09 and 10 are sequential, not parallel**, and the order is deliberate: 09 lands
+the database wiring (container, client, config, migrations, environment) that 10
+then reuses, and 09's claim is verifiable on its own. Both keep ticket 04's
+pattern of proving the hard contract rules **without an API key** first — an
+unknown run, a foreign offset, a rejoin with no position — before spending a key
+on the streaming checks. 10 ends on a deliberate stopping point rather than a
+finished feature; the server holds a transcript nothing reads back yet, and the
+follow-up should be written up as ticket 11 rather than left implicit.
+
+Ticket 07 remains unresolved. Ticket 08 removed the surfaces it was to be built
+from, so after 09 a resumed run and a silently re-run one still look identical on
+screen — 09 makes the claim *true* and does nothing to make it *visible*. See
+ticket 08's Further Notes; that tension is not closed by either new ticket.
 
 Work the frontier: any ticket whose blockers are done. Clear context between
 tickets.
