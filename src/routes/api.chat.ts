@@ -5,10 +5,12 @@ import {
   resumeServerSentEventsResponse,
   toServerSentEventsResponse,
 } from '@tanstack/ai'
+import { withPersistence } from '@tanstack/ai-persistence'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { resumeRunRequestSchema, startRunRequestSchema } from '@/schema/chat'
 import { textAdapter } from '@/server/ai/adapter'
+import { chatPersistence } from '@/server/ai/chat-persistence'
 import { resolveResumeOffset } from '@/server/ai/resume-position'
 import { streamStore } from '@/server/ai/stream-store'
 
@@ -32,6 +34,12 @@ function badRequest(reason: string) {
  *
  * Which backend the log lives in is `streamStore`'s business. Nothing here may
  * name one.
+ *
+ * Conversation state is a second, separate layer: `chatPersistence` writes the
+ * transcript, the run's lifecycle, and its cost as each turn completes. It
+ * shares no code with the delivery log and answers a different question — what
+ * was said, rather than what was streamed. The client remains authoritative, so
+ * each save overwrites the server's copy with the transcript it posted.
  */
 export const Route = createFileRoute('/api/chat')({
   server: {
@@ -52,6 +60,7 @@ export const Route = createFileRoute('/api/chat')({
           messages,
           threadId,
           runId,
+          middleware: [withPersistence(chatPersistence)],
         })
 
         // The run id goes to the store explicitly: it is the client's own id

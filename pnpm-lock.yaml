@@ -20,6 +20,9 @@ importers:
       '@tanstack/ai-openrouter':
         specifier: 0.15.11
         version: 0.15.11(@tanstack/ai@0.43.1(zod@4.4.3))
+      '@tanstack/ai-persistence':
+        specifier: 0.1.1
+        version: 0.1.1(@tanstack/ai@0.43.1(zod@4.4.3))
       '@tanstack/ai-react':
         specifier: 0.19.1
         version: 0.19.1(@tanstack/ai@0.43.1(zod@4.4.3))(@types/react@19.2.18)(react@19.2.8)(zod@4.4.3)
@@ -849,6 +852,15 @@ packages:
     resolution: {integrity: sha512-rmZNFQHiJFNO1OCNXOpm9vgedyHsuRu50OIjoM1K8Y+uG8X/3plAegCHcyVfqvS2DSnGtHAkLvLXpdg3RbWnSw==}
     peerDependencies:
       '@tanstack/ai': ^0.43.0
+
+  '@tanstack/ai-persistence@0.1.1':
+    resolution: {integrity: sha512-QR2xD94NXw3pTn6ANHiVVisQg9dKBc1uGZNUcRr8dPpSBmBTxmrll6fpuKjrV9tYOO2SZCPWIEXGT9pxMmKqaw==}
+    peerDependencies:
+      '@tanstack/ai': 0.43.1
+      vitest: ^4.1.10
+    peerDependenciesMeta:
+      vitest:
+        optional: true
 
   '@tanstack/ai-react@0.19.1':
     resolution: {integrity: sha512-gAKC7a0FgFa7EOF0yeRBo9o29n+BELLVXdfD8RH2JWv94HYontcpwqjW6/YLxlYHDmoROUVn4ENIvjBLxxZKXw==}
@@ -2294,6 +2306,11 @@ snapshots:
   '@tanstack/ai-openrouter@0.15.11(@tanstack/ai@0.43.1(zod@4.4.3))':
     dependencies:
       '@openrouter/sdk': 0.13.20
+      '@tanstack/ai': 0.43.1(zod@4.4.3)
+      '@tanstack/ai-utils': 0.4.0
+
+  '@tanstack/ai-persistence@0.1.1(@tanstack/ai@0.43.1(zod@4.4.3))':
+    dependencies:
       '@tanstack/ai': 0.43.1(zod@4.4.3)
       '@tanstack/ai-utils': 0.4.0
 
