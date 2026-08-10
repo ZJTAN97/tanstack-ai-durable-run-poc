@@ -1,4 +1,5 @@
 import type { StreamDurability } from '@tanstack/ai'
+import { sweepExpiredDeliveryLogs } from '@/server/ai/delivery-log-retention'
 import { postgresStream } from '@/server/ai/postgres-stream'
 
 /**
@@ -36,4 +37,21 @@ export function streamStore(
   return producedRunId === undefined
     ? postgresStream(request)
     : postgresStream({ runId: producedRunId })
+}
+
+/**
+ * Reclaim the space held by runs no reader can still want.
+ *
+ * A log is a transport buffer, not a record. It exists so a client that dropped
+ * mid-stream can collect the chunks it missed; what was actually said outlives it
+ * in the conversation transcript, which this never touches. So retention is not
+ * a bolt-on here — a buffer with no expiry is the part that was missing.
+ *
+ * Whether reclamation means a `DELETE`, a key expiry, or a dropped partition is
+ * the backend's business, exactly as the log itself is. Hence the wrapper: the
+ * seam that stops a caller naming a backend has to cover both, or the endpoint
+ * ends up importing Postgres to do its housekeeping.
+ */
+export function sweepExpiredRunLogs() {
+  return sweepExpiredDeliveryLogs()
 }

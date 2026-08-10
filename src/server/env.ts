@@ -11,6 +11,16 @@ const environmentSchema = z.object({
       'postgres',
       'must be a postgres:// or postgresql:// connection string',
     ),
+  // How long a *finished* run stays replayable from its delivery log. Short by
+  // default because the log is a transport buffer, not a record: the transcript
+  // outlives it in `chat_messages`. Set it above the longest gap you expect
+  // between a run ending and a dropped client coming back for its tail — past
+  // that, the rejoin fails rather than replaying.
+  DELIVERY_LOG_RETENTION_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60),
 })
 
 const parsedEnvironment = environmentSchema.safeParse(process.env)

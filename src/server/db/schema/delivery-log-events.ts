@@ -14,9 +14,17 @@ import { deliveryLogs } from '@/server/db/schema/delivery-logs'
  * wire offset carries a version prefix.)
  *
  * `chunk` stores the library's chunk verbatim, so a future library version that
- * adds a field does not silently lose it on the way through our log.
+ * adds a field does not silently lose it on the way through our log — with one
+ * measured exception. `TEXT_MESSAGE_CONTENT` mirrors every delta before it in a
+ * `content` field the library documents as internal, which makes a stored run
+ * cost O(reply length²); it is stripped on write when the delta that rebuilds it
+ * is present. `withoutAccumulatedContent` in `postgres-stream.ts` owns that rule
+ * and is the only place a chunk is not passed through untouched.
  *
- * The log grows without bound. Retention is out of scope for the POC.
+ * The log does not grow without bound: it is reclaimed on a timer by run, not by
+ * row, and `delivery-log-retention.ts` owns when. Reclamation is safe because
+ * this table is a transport buffer for clients that dropped mid-stream — what was
+ * said is kept, separately and once, in the conversation transcript.
  */
 export const deliveryLogEvents = pgTable(
   'delivery_log_events',

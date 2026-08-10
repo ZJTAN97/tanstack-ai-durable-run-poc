@@ -1,4 +1,8 @@
-import { resolveResumeRunId, type StreamDurability } from '@tanstack/ai'
+import {
+  resolveResumeRunId,
+  type StreamChunk,
+  type StreamDurability,
+} from '@tanstack/ai'
 import { and, asc, desc, eq, gt, sql } from 'drizzle-orm'
 import {
   appendNotificationChannel,
@@ -58,7 +62,7 @@ const FIRST_EVENT_DEADLINE_MS = 1_000
  * first token, or a long tool call. Too low and a live run is declared dead;
  * too high and a dead run keeps a client waiting.
  */
-const PRODUCER_SILENCE_TIMEOUT_MS = 45_000
+export const PRODUCER_SILENCE_TIMEOUT_MS = 45_000
 
 function encodeOffset(runId: string, position: number) {
   return `${OFFSET_PREFIX}${encodeURIComponent(runId)}:${position}`
@@ -84,6 +88,35 @@ function decodeOffset(offset: string) {
   }
 
   return { runId, position }
+}
+
+/**
+ * Drop the accumulated mirror of a chunk's own history before storing it.
+ *
+ * `TEXT_MESSAGE_CONTENT` carries the new tokens in `delta` *and* every delta
+ * before them in `content`, so storing it whole costs O(reply length²): a
+ * measured 3.2k-character reply cost 421kB across 268 rows, of which 3.2kB was
+ * new information, and a 30k-character reply would cost around 34MB.
+ *
+ * Dropping it is safe because the library treats `delta` as authoritative — its
+ * stream processor accumulates from `delta` and consults `content` only when no
+ * delta is present, and the field's own type annotates it as internal. The
+ * guard is what preserves that fallback: the mirror goes only when a delta is
+ * actually there to rebuild it from, so a provider that emits content-only
+ * chunks still round-trips byte for byte.
+ *
+ * This is the sole exception to storing chunks verbatim, and it is the reason
+ * the event table's own comment now names one.
+ */
+function withoutAccumulatedContent(chunk: StreamChunk): StreamChunk {
+  const isRebuildableFromDeltas =
+    'content' in chunk && typeof chunk.delta === 'string' && chunk.delta !== ''
+
+  if (!isRebuildableFromDeltas) return chunk
+
+  const { content: _accumulated, ...withoutMirror } = chunk
+
+  return withoutMirror as StreamChunk
 }
 
 function assertValidRunId(runId: string) {
@@ -210,7 +243,12 @@ export function postgresStream(source: Request | { runId: string }) {
 
         const inserted = await transaction
           .insert(deliveryLogEvents)
-          .values(chunks.map((chunk) => ({ runId, chunk })))
+          .values(
+            chunks.map((chunk) => ({
+              runId,
+              chunk: withoutAccumulatedContent(chunk),
+            })),
+          )
           .returning({ id: deliveryLogEvents.id })
 
         // Inside the transaction, so the wake is delivered on commit — never

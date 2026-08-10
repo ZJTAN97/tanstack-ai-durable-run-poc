@@ -2,7 +2,6 @@ import {
   createChatClientOptions,
   fetchServerSentEvents,
   type InferChatMessages,
-  localStoragePersistence,
 } from '@tanstack/ai-react'
 
 // Module-level, because `useChat` reads the transport once — the connection it
@@ -11,33 +10,28 @@ import {
 const durableChatConnection = fetchServerSentEvents('/api/chat')
 
 /**
- * Where the browser keeps the conversation between page loads.
- *
- * The stored record is one blob per thread holding both the transcript *and*
- * the pointer to a run still in flight. Both halves are load-bearing and
- * neither is sufficient alone: without the pointer a reload repaints a
- * conversation whose last reply is frozen half-written, and without the
- * transcript there is nothing to paint the resumed reply onto.
- *
- * `localStorage` reads throw during SSR, which the persistence layer treats as
- * best-effort — the server renders an empty transcript and the browser fills it
- * in on mount.
- */
-const browserPersistence = localStoragePersistence({
-  keyPrefix: 'durable-run-poc:',
-})
-
-/**
  * The chat client's configuration for one conversation.
  *
- * `threadId` is both the wire identity and the browser storage key, which is
- * what makes the URL from ticket 05 the thing a reload rejoins by: same URL,
- * same key, same conversation, same in-flight run.
+ * `persistence: true` is server-authoritative: the browser caches nothing, and
+ * on mount the client asks the endpoint for this thread — `GET ?threadId=`,
+ * which `fetchServerSentEvents` issues itself — and gets back the stored
+ * transcript plus a cursor to a run still generating, which it then tails.
+ *
+ * That is a stronger claim than the `localStorage` record this replaced, not
+ * just a tidier one. A cached blob makes a reload resumable in *that browser*;
+ * the run pointer resolved from Postgres makes it resumable anywhere the URL
+ * goes, because the question "is a run still going on this thread?" is now
+ * answered by the server that is running it. The whole reason the transcript
+ * moved into Postgres was to be read back, and this is the read.
+ *
+ * `threadId` is the wire identity and the hydration key both, which is what
+ * makes the URL from ticket 05 the thing a reload rejoins by: same URL, same
+ * thread, same in-flight run.
  */
 export function createChatOptions(threadId: string) {
   return createChatClientOptions({
     connection: durableChatConnection,
-    persistence: browserPersistence,
+    persistence: true,
     threadId,
   })
 }

@@ -26,9 +26,11 @@ import { chatThreads } from '@/server/db/schema/chat-threads'
  * events of one run, this records the messages of a conversation — and the two
  * deliberately share no code.
  *
- * The browser is still authoritative. The client posts its full transcript and
- * the contract reads a non-empty list as an assertion of authority, so every
- * save overwrites what is stored. Nothing reads this copy back yet.
+ * This copy is authoritative, and `reconstructChat` on the endpoint's GET is
+ * what reads it back: the client caches nothing and paints what `loadThread`
+ * returns. A save is still a full overwrite driven by the transcript the client
+ * posted, because that is the contract the middleware implements — the shift is
+ * in who is believed on load, not in how a turn is written.
  *
  * Every rule marked below is one the library's conformance kit checks. That kit
  * is not run here — the project has no test framework — so these are the places
@@ -94,6 +96,10 @@ const messageStore: MessageStore = {
   // One transaction, because a thread holding half a conversation must never be
   // observable.
   async saveThread(threadId, messages) {
+
+    console.log("i am saving thread");
+    console.log(messages);
+
     await db.transaction(async (transaction) => {
       await transaction
         .insert(chatThreads)
