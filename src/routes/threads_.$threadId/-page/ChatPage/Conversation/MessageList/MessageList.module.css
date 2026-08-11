@@ -1,14 +1,6 @@
-/* Positioning context for the jump-to-latest button, which has to float over
-   the transcript rather than scroll away with it. */
-.root {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-}
-
 .viewport {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -31,23 +23,4 @@
 
 .turns {
   flex: 0 0 auto;
-}
-
-.jumpToLatest {
-  position: absolute;
-  bottom: var(--mantine-spacing-md);
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 1;
-  transition: opacity 150ms ease;
-
-  @starting-style {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jumpToLatest {
-    transition: none;
-  }
 }

@@ -1,3 +1,4 @@
+import type { ModelMessage } from '@tanstack/ai'
 import type {
   ChatPersistence,
   InterruptRecord,
@@ -79,6 +80,42 @@ function mapInterrupt(
   }
 }
 
+const TITLE_MAX_LENGTH = 80
+
+// A message's content is a string, null, or a list of parts, and only the text
+// parts can name a conversation — an opening turn that is a single image has
+// nothing to read off.
+function readMessageText(message: ModelMessage) {
+  if (typeof message.content === 'string') return message.content
+  if (message.content === null) return ''
+
+  return message.content
+    .filter((part) => part.type === 'text')
+    .map((part) => part.content)
+    .join(' ')
+}
+
+/**
+ * What the thread list calls this conversation: its opening question, shortened.
+ *
+ * Derived rather than asked for, because a POC that stops to demand a name
+ * before the first message is a POC nobody finishes using. It is recomputed on
+ * every save, which is free here — the first user message does not change, so
+ * the same title is rewritten — and means a thread cannot keep a title belonging
+ * to a transcript it no longer has.
+ */
+function deriveThreadTitle(messages: Array<ModelMessage>) {
+  const opening = messages.find((message) => message.role === 'user')
+  if (opening === undefined) return null
+
+  const text = readMessageText(opening).replace(/\s+/g, ' ').trim()
+  if (text === '') return null
+
+  return text.length > TITLE_MAX_LENGTH
+    ? `${text.slice(0, TITLE_MAX_LENGTH).trimEnd()}…`
+    : text
+}
+
 const messageStore: MessageStore = {
   async loadThread(threadId) {
     const rows = await db
@@ -96,17 +133,15 @@ const messageStore: MessageStore = {
   // One transaction, because a thread holding half a conversation must never be
   // observable.
   async saveThread(threadId, messages) {
-
-    console.log("i am saving thread");
-    console.log(messages);
+    const title = deriveThreadTitle(messages)
 
     await db.transaction(async (transaction) => {
       await transaction
         .insert(chatThreads)
-        .values({ threadId, updatedAt: new Date() })
+        .values({ threadId, title, updatedAt: new Date() })
         .onConflictDoUpdate({
           target: chatThreads.threadId,
-          set: { updatedAt: new Date() },
+          set: { title, updatedAt: new Date() },
         })
 
       await transaction

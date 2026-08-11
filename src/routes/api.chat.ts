@@ -66,7 +66,7 @@ export const Route = createFileRoute('/api/chat')({
         const { messages, threadId, runId } = await chatParamsFromRequestBody(
           parsedBody.data,
         )
-        
+
         const stream = chat({
           adapter: textAdapter,
           messages,
@@ -74,7 +74,10 @@ export const Route = createFileRoute('/api/chat')({
           runId,
           // Order is load-bearing: `onFinish` hooks run in array order, and
           // `withThinkingPersistence` patches the row the one before it wrote.
-          middleware: [withPersistence(chatPersistence), withThinkingPersistence],
+          middleware: [
+            withPersistence(chatPersistence),
+            withThinkingPersistence,
+          ],
         })
 
         // The run id goes to the store explicitly: it is the client's own id

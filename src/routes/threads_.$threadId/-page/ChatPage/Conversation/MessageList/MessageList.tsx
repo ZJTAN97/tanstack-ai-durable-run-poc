@@ -1,8 +1,7 @@
-import { Button, Stack, Text } from '@mantine/core'
+import { Stack, Text } from '@mantine/core'
 
 import type { ConversationMessage } from '../create-chat-options'
 import { FailedTurn } from './FailedTurn/FailedTurn'
-import { useStickToBottom } from './hooks/use-stick-to-bottom'
 import { MessageBubble } from './MessageBubble/MessageBubble'
 import classes from './MessageList.module.css'
 import { PendingReply } from './PendingReply/PendingReply'
@@ -40,57 +39,31 @@ export function MessageList({
   error: Error | undefined
   isGenerating: boolean
 }) {
-  const {
-    viewportRef,
-    handleViewportScroll,
-    observeTranscriptContent,
-    isNearBottom,
-    scrollToLatest,
-  } = useStickToBottom()
-
   const hasNothingToShow = messages.length === 0 && error === undefined
   const isAwaitingText = isGenerating && !hasProducedText(messages.at(-1))
 
   return (
-    <div className={classes.root}>
-      <div
-        className={classes.viewport}
-        ref={viewportRef}
-        onScroll={handleViewportScroll}
-      >
-        <div className={classes.content} ref={observeTranscriptContent}>
-          {hasNothingToShow ? (
-            <Stack className={classes.greeting} gap="xs" align="center">
-              <Text size="xl" fw={600}>
-                What can I help with?
-              </Text>
-              <Text size="sm" c="dimmed" ta="center">
-                Type a message below to start the conversation.
-              </Text>
-            </Stack>
-          ) : (
-            <Stack className={classes.turns} gap="xl">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-              {isAwaitingText && <PendingReply />}
-              {error !== undefined && <FailedTurn reason={error.message} />}
-            </Stack>
-          )}
-        </div>
+    <div className={classes.viewport}>
+      <div className={classes.content}>
+        {hasNothingToShow ? (
+          <Stack className={classes.greeting} gap="xs" align="center">
+            <Text size="xl" fw={600}>
+              What can I help with?
+            </Text>
+            <Text size="sm" c="dimmed" ta="center">
+              Type a message below to start the conversation.
+            </Text>
+          </Stack>
+        ) : (
+          <Stack className={classes.turns} gap="xl">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+            {isAwaitingText && <PendingReply />}
+            {error !== undefined && <FailedTurn reason={error.message} />}
+          </Stack>
+        )}
       </div>
-
-      {!isNearBottom && (
-        <Button
-          className={classes.jumpToLatest}
-          variant="default"
-          size="xs"
-          radius="xl"
-          onClick={scrollToLatest}
-        >
-          Jump to latest
-        </Button>
-      )}
     </div>
   )
 }

@@ -1,0 +1,140 @@
+/* The markdown renderer emits plain intrinsic elements, and Mantine's reset
+   strips them back to nothing — so the prose styles that a reply needs to be
+   readable have to be stated here, scoped to this subtree. */
+.prose {
+  overflow-wrap: anywhere;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}
+
+.prose p {
+  margin: 0 0 var(--mantine-spacing-sm);
+  line-height: var(--mantine-line-height-md);
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  margin: var(--mantine-spacing-lg) 0 var(--mantine-spacing-xs);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.prose h1 {
+  font-size: var(--mantine-font-size-xl);
+}
+
+.prose h2 {
+  font-size: var(--mantine-font-size-lg);
+}
+
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-size: var(--mantine-font-size-md);
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 var(--mantine-spacing-sm);
+  padding-inline-start: var(--mantine-spacing-lg);
+}
+
+.prose li {
+  margin-bottom: calc(var(--mantine-spacing-xs) / 2);
+  line-height: var(--mantine-line-height-md);
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-top: calc(var(--mantine-spacing-xs) / 2);
+}
+
+.prose blockquote {
+  margin: 0 0 var(--mantine-spacing-sm);
+  padding-inline-start: var(--mantine-spacing-md);
+  border-inline-start: 3px solid
+    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  color: var(--mantine-color-dimmed);
+}
+
+.prose code {
+  padding: 0.1em 0.35em;
+  border-radius: var(--mantine-radius-sm);
+  background-color: light-dark(
+    var(--mantine-color-gray-1),
+    var(--mantine-color-dark-5)
+  );
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 0.875em;
+}
+
+/* A fenced block scrolls inside itself: a long unbroken line of code must not
+   widen the transcript column and take the composer with it. */
+.prose pre {
+  margin: 0 0 var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  background-color: light-dark(
+    var(--mantine-color-gray-1),
+    var(--mantine-color-dark-6)
+  );
+  overflow-x: auto;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: var(--mantine-font-size-xs);
+}
+
+.prose a {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline;
+}
+
+.prose table {
+  display: block;
+  margin: 0 0 var(--mantine-spacing-sm);
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.prose th,
+.prose td {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border: 1px solid
+    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  text-align: start;
+}
+
+.prose th {
+  font-weight: 600;
+  background-color: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-6)
+  );
+}
+
+.prose hr {
+  margin: var(--mantine-spacing-md) 0;
+  border: none;
+  border-top: 1px solid
+    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+}

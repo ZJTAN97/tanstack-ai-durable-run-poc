@@ -25,7 +25,7 @@ export function MessageBubble({ message }: { message: ConversationMessage }) {
     <Stack gap="sm">
       <VisuallyHidden>{ROLE_LABELS[message.role]}:</VisuallyHidden>
       {message.parts.map((part, partIndex) => (
-        <MessagePartView key={partIndex} part={part} />
+        <MessagePartView key={partIndex} part={part} role={message.role} />
       ))}
     </Stack>
   )

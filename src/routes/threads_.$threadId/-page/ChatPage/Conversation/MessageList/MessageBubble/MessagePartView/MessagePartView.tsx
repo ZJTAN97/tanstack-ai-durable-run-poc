@@ -1,7 +1,11 @@
 import { Badge, Text } from '@mantine/core'
 
-import type { ConversationMessagePart } from '../../../create-chat-options'
+import type {
+  ConversationMessage,
+  ConversationMessagePart,
+} from '../../../create-chat-options'
 
+import { MessageMarkdown } from './MessageMarkdown/MessageMarkdown'
 import classes from './MessagePartView.module.css'
 import { ThoughtProcess } from './ThoughtProcess/ThoughtProcess'
 import { ToolActivity } from './ToolActivity/ToolActivity'
@@ -17,11 +21,27 @@ import { ToolActivity } from './ToolActivity/ToolActivity'
  * Every branch here is reachable in principle, and the default branch exists so
  * that a part type this POC has never seen degrades to a label instead of
  * taking the page down mid-stream.
+ *
+ * Only the model's prose is parsed as Markdown. What a person typed is shown
+ * exactly as they typed it: a user's line breaks are meaningful and Markdown
+ * would collapse them, and pasted text full of asterisks or underscores would
+ * come back italicised — turning their own words into a rendering of their
+ * words. The role decides, so it has to be passed in.
  */
-export function MessagePartView({ part }: { part: ConversationMessagePart }) {
+export function MessagePartView({
+  part,
+  role,
+}: {
+  part: ConversationMessagePart
+  role: ConversationMessage['role']
+}) {
   switch (part.type) {
     case 'text':
-      return <Text className={classes.body}>{part.content}</Text>
+      return role === 'user' ? (
+        <Text className={classes.body}>{part.content}</Text>
+      ) : (
+        <MessageMarkdown source={part.content} />
+      )
 
     case 'thinking':
       return <ThoughtProcess reasoning={part.content} />
