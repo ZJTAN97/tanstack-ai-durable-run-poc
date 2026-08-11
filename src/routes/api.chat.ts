@@ -5,6 +5,7 @@ import {
   resumeServerSentEventsResponse,
   toServerSentEventsResponse,
 } from '@tanstack/ai'
+import { webSearchTool } from '@tanstack/ai-openrouter/tools'
 import { reconstructChat, withPersistence } from '@tanstack/ai-persistence'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
@@ -72,12 +73,18 @@ export const Route = createFileRoute('/api/chat')({
           messages,
           threadId,
           runId,
+          systemPrompts: ['You are a helpful AI Assistant name bob.'],
+          // `none` is the only off-switch this SDK version types: the request's
+          // `reasoning` is `{ effort, summary }`, with no `enabled` flag.
+          modelOptions: { reasoning: { effort: 'none' } },
+          // OpenRouter runs this one on its own side, so the model decides when
+          // to search and the calls arrive as tool-call chunks in the stream —
+          // which means they land in the delivery log and replay like anything
+          // else. No client implementation to attach.
+          tools: [webSearchTool({ maxResults: 5 })],
           // Order is load-bearing: `onFinish` hooks run in array order, and
           // `withThinkingPersistence` patches the row the one before it wrote.
-          middleware: [
-            withPersistence(chatPersistence),
-            withThinkingPersistence,
-          ],
+          middleware: [withPersistence(chatPersistence)],
         })
 
         // The run id goes to the store explicitly: it is the client's own id
