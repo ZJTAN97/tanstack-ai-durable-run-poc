@@ -1,20 +1,20 @@
 import {
   chat,
-  chatParamsFromRequestBody,
+  chatParamsFromRequest,
   resolveResumeRunId,
   resumeServerSentEventsResponse,
   toServerSentEventsResponse,
 } from '@tanstack/ai'
+import { createOpenRouterText } from '@tanstack/ai-openrouter'
 import { webSearchTool } from '@tanstack/ai-openrouter/tools'
 import { reconstructChat, withPersistence } from '@tanstack/ai-persistence'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { resumeRunRequestSchema, startRunRequestSchema } from '@/schema/chat'
-import { textAdapter } from '@/server/ai/adapter'
+import { resumeRunRequestSchema } from '@/schema/chat'
 import { chatPersistence } from '@/server/ai/chat-persistence'
 import { resolveResumeOffset } from '@/server/ai/resume-position'
 import { streamStore, sweepExpiredRunLogs } from '@/server/ai/stream-store'
-import { withThinkingPersistence } from '@/server/ai/thinking-persistence'
+import { env } from '@/server/env'
 
 function badRequest(reason: string) {
   return new Response(reason, {
@@ -23,36 +23,12 @@ function badRequest(reason: string) {
   })
 }
 
-/**
- * The durable-run contract: POST runs the model once and logs it, GET replays
- * that log. Both handlers are load-bearing — a POST-only endpoint is not
- * durable.
- *
- * A client that drops mid-run does not cancel it. On a fresh run the producer
- * and the delivery side get separate abort controllers, so the server keeps
- * draining the model into the log with nobody listening and a client that
- * rejoins later still gets the whole reply. That is the framework's behaviour;
- * this endpoint only wires it.
- *
- * Which backend the log lives in is `streamStore`'s business. Nothing here may
- * name one.
- *
- * Conversation state is a second, separate layer: `chatPersistence` writes the
- * transcript, the run's lifecycle, and its cost as each turn completes. It
- * shares no code with the delivery log and answers a different question — what
- * was said, rather than what was streamed. The server owns that copy, and GET
- * hands it back, so the browser caches nothing.
- */
 export const Route = createFileRoute('/api/chat')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const body = await request.json().catch(() => null)
-        const parsedBody = startRunRequestSchema.safeParse(body)
-
-        if (!parsedBody.success) {
-          return badRequest(z.prettifyError(parsedBody.error))
-        }
+        const { messages, threadId, runId } =
+          await chatParamsFromRequest(request)
 
         // Expiring old logs rides along with starting a new run, because a POST
         // is the only moment this server is reliably awake and about to grow the
@@ -64,31 +40,20 @@ export const Route = createFileRoute('/api/chat')({
           console.error('[delivery-log] sweep failed', failure)
         })
 
-        const { messages, threadId, runId } = await chatParamsFromRequestBody(
-          parsedBody.data,
-        )
-
         const stream = chat({
-          adapter: textAdapter,
+          adapter: createOpenRouterText(
+            'qwen/qwen3.6-flash',
+            env.OPENROUTER_API_KEY,
+          ),
           messages,
           threadId,
           runId,
           systemPrompts: ['You are a helpful AI Assistant name bob.'],
-          // `none` is the only off-switch this SDK version types: the request's
-          // `reasoning` is `{ effort, summary }`, with no `enabled` flag.
           modelOptions: { reasoning: { effort: 'none' } },
-          // OpenRouter runs this one on its own side, so the model decides when
-          // to search and the calls arrive as tool-call chunks in the stream —
-          // which means they land in the delivery log and replay like anything
-          // else. No client implementation to attach.
-          tools: [webSearchTool({ maxResults: 5 })],
-          // Order is load-bearing: `onFinish` hooks run in array order, and
-          // `withThinkingPersistence` patches the row the one before it wrote.
+          tools: [webSearchTool({ maxResults: 2 })],
           middleware: [withPersistence(chatPersistence)],
         })
 
-        // The run id goes to the store explicitly: it is the client's own id
-        // for this run, and it is the one the client will come back with.
         return toServerSentEventsResponse(stream, {
           durability: { adapter: streamStore(request, runId) },
         })

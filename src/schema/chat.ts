@@ -16,22 +16,6 @@ const runIdentifier = z
   })
 
 /**
- * What a request starting a run must carry, over and above the AG-UI shape
- * `chatParamsFromRequestBody` checks.
- *
- * Loose, because the AG-UI body legitimately carries fields this POC does not
- * read (tools, state, forwarded props) and dropping them would corrupt the
- * payload handed on for normalisation. The strictness that matters here is the
- * run identity: a run whose `threadId` or `runId` is absent or empty can never
- * be rejoined, which is the one thing this POC exists to demonstrate.
- */
-export const startRunRequestSchema = z.looseObject({
-  threadId: runIdentifier,
-  runId: runIdentifier,
-  messages: z.array(z.unknown()).min(1, 'a run needs at least one message'),
-})
-
-/**
  * What a request resuming a run must carry.
  *
  * A resume must be able to say *which* run it wants. A backend-minted offset
