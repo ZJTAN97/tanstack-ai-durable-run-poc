@@ -1,5 +1,5 @@
 import { and, isNull, lt, or, sql } from 'drizzle-orm'
-import { PRODUCER_SILENCE_TIMEOUT_MS } from '@/server/ai/postgres-stream'
+import { PRODUCER_SILENCE_TIMEOUT_MS } from '@/server/ai/stream-store'
 import { db } from '@/server/db/client'
 import { deliveryLogs } from '@/server/db/schema/delivery-logs'
 import { env } from '@/server/env'

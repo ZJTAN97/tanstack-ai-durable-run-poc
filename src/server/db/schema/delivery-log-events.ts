@@ -18,7 +18,7 @@ import { deliveryLogs } from '@/server/db/schema/delivery-logs'
  * measured exception. `TEXT_MESSAGE_CONTENT` mirrors every delta before it in a
  * `content` field the library documents as internal, which makes a stored run
  * cost O(reply length²); it is stripped on write when the delta that rebuilds it
- * is present. `withoutAccumulatedContent` in `postgres-stream.ts` owns that rule
+ * is present. `withoutAccumulatedContent` in `stream-store.ts` owns that rule
  * and is the only place a chunk is not passed through untouched.
  *
  * The log does not grow without bound: it is reclaimed on a timer by run, not by

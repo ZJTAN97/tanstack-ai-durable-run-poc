@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 /**
- * Bounded and URL-safe. Stricter than the run identity `@/schema/chat` accepts,
- * and deliberately so: that schema guards a request body a client composes,
+ * Bounded and URL-safe. Stricter than the run identity the durable-run log
+ * accepts, and deliberately so: that one guards ids a client composes and sends,
  * whereas this one guards the one place a human types the id by hand. Keeping
  * what the address bar can express to plainly URL-safe characters means the id
  * read off the screen is the id that travels onward, unescaped and unaltered.

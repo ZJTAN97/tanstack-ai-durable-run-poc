@@ -131,7 +131,7 @@ export const Route = createFileRoute('/api/chat')({
 })
 ```
 
-- The durability adapter is wrapped in `src/server/ai/stream-store.ts`, not imported directly into the route. The route must not care which backend is behind it.
+- The durability adapter lives in `src/server/ai/stream-store.ts` and the route imports `streamStore` from it and nothing else. The route must not care which backend is behind it — but hide the backend by making that module *be* the store, not by wrapping one. A pass-through whose only output is a rename costs a code jump and buys nothing.
 - **`memoryStream` is for first-light development only.** It lives in process memory, so it dies with the server and cannot be shared across processes — it proves reconnect, not durability. The POC's actual claim requires the Postgres-backed run log (see §5).
 - Whichever adapter is active must be stated plainly in the demo. A memory-backed run that survives an F5 is not evidence of a durable run.
 

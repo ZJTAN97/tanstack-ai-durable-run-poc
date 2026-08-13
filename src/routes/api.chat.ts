@@ -1,7 +1,6 @@
 import {
   chat,
   chatParamsFromRequest,
-  resolveResumeRunId,
   resumeServerSentEventsResponse,
   toServerSentEventsResponse,
 } from '@tanstack/ai'
@@ -9,11 +8,9 @@ import { createOpenRouterText } from '@tanstack/ai-openrouter'
 import { webSearchTool } from '@tanstack/ai-openrouter/tools'
 import { reconstructChat, withPersistence } from '@tanstack/ai-persistence'
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
-import { resumeRunRequestSchema } from '@/schema/chat'
 import { chatPersistence } from '@/server/ai/chat-persistence'
-import { resolveResumeOffset } from '@/server/ai/resume-position'
-import { streamStore, sweepExpiredRunLogs } from '@/server/ai/stream-store'
+import { sweepExpiredDeliveryLogs } from '@/server/ai/delivery-log-retention'
+import { describeResumeRejection, streamStore } from '@/server/ai/stream-store'
 import { env } from '@/server/env'
 
 function badRequest(reason: string) {
@@ -30,7 +27,7 @@ export const Route = createFileRoute('/api/chat')({
         const { messages, threadId, runId } =
           await chatParamsFromRequest(request)
 
-        void sweepExpiredRunLogs().catch((failure) => {
+        void sweepExpiredDeliveryLogs().catch((failure) => {
           console.error('[delivery-log] sweep failed', failure)
         })
 
@@ -53,48 +50,23 @@ export const Route = createFileRoute('/api/chat')({
         })
       },
 
-      // Two read-only requests share this verb, told apart by what they name. A
-      // hydration names a *thread* (`?threadId=`) and is answered with JSON: the
-      // stored transcript, plus a cursor to a run still generating. A resume
-      // names a *run* — `?offset=-1&runId=…` for a rejoin, or a `Last-Event-ID`
-      // header carrying the last offset delivered for a native SSE reconnect —
-      // and is answered with the replayed stream. Neither is a special case of
-      // the other: different question, different content type.
       GET: ({ request }) => {
         const isThreadHydration = new URL(request.url).searchParams.has(
           'threadId',
         )
 
-        // No `authorize` callback, because this POC has no sessions: every
-        // visitor is the same visitor and a thread id is a bookmark, not a
-        // secret. Anything with real users must pass one — the helper will
-        // otherwise hand the full transcript to whoever guesses a `?threadId=`.
         if (isThreadHydration) {
           return reconstructChat(chatPersistence, request)
         }
 
-        const parsedResume = resumeRunRequestSchema.safeParse({
-          runId: resolveResumeRunId(request),
-          offset: resolveResumeOffset(request),
-        })
+        // The run and position a resume asks for are written in an offset the
+        // log minted, so the log is what judges them. This route only reports
+        // the verdict — a resume it refuses is a bad request, not a fault.
+        const rejection = describeResumeRejection(request)
 
-        if (!parsedResume.success) {
-          return badRequest(z.prettifyError(parsedResume.error))
-        }
+        if (rejection) return badRequest(rejection)
 
-        // The offset's format belongs to the log, not to this route, so the
-        // only place it can be judged is where the store reads it. A position
-        // the store refuses to accept is a bad request, not a server fault —
-        // catching it here keeps that legible without naming a backend.
-        try {
-          return resumeServerSentEventsResponse({
-            adapter: streamStore(request),
-          })
-        } catch (rejection) {
-          return badRequest(
-            rejection instanceof Error ? rejection.message : String(rejection),
-          )
-        }
+        return resumeServerSentEventsResponse({ adapter: streamStore(request) })
       },
     },
   },
