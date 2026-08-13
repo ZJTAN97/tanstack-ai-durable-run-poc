@@ -1,27 +1,8 @@
 # Project Context & Guidelines
 
-## 0. What This Project Is
-
-A proof-of-concept for **TanStack AI durable runs** running on **TanStack Start**. The goal is to prove that an AI run survives a dropped connection, a page reload, or a new tab — the client rejoins the same run and replays the events it missed.
-
-Everything else in this repo exists to serve that question. When a choice is between "more architecture" and "the thing that demonstrates durability clearly", choose the latter.
-
 ---
 
-## 1. Stack & Commands
-
-| Concern | Choice |
-| :--- | :--- |
-| Framework | TanStack Start (fullstack, SSR) |
-| UI | React 19 |
-| Routing | TanStack Router — file-based, `src/routes/` |
-| Data | Route loaders + `createServerFn`. **No TanStack Query, no Axios.** |
-| AI | TanStack AI (`@tanstack/ai`, `@tanstack/ai-react`) via OpenRouter (`@tanstack/ai-openrouter`) |
-| Database | PostgreSQL via Docker Compose + Drizzle ORM / drizzle-kit |
-| Validation | Zod |
-| Styling | Mantine v9.5x + CSS Modules |
-| Build | Vite 8.x |
-| Lint/Format | Biome |
+## 1. Commands
 
 ```bash
 # Database (start this before pnpm dev)
@@ -181,10 +162,6 @@ Chunks are appended as JSONB; the row id is the cursor. Do not invent a second i
 
 Postgres is not incidental infrastructure here — it is what makes a run *durable* rather than merely reconnectable. Add tables only where the POC needs them: the run log, and thread/message history if the demo requires reloading a conversation.
 
-### Local Postgres
-Runs via `docker-compose.yml` at the repo root — a pinned `postgres:17-alpine` image, a named volume, port 5432, and a `pg_isready` healthcheck so the app doesn't race the database on startup. Credentials for local dev only; the real `DATABASE_URL` comes from `.env` (git-ignored, with a committed `.env.example`).
-
-Never `docker compose down -v` without saying so — it destroys the volume, which in this project means destroying the run history the POC exists to demonstrate.
 
 ### Client
 One pooled client, constructed once in `src/server/db/client.ts`:
@@ -229,10 +206,6 @@ Both are sources of truth, for different boundaries. Keep them apart:
 - **No Premature Optimization:** Do **NOT** reach for `useMemo` or `useCallback` by default. Take this seriously.
 - **Exception:** Only to break an infinite re-render loop, or for measurably expensive work (thousands of rows). React 19 + the compiler make most manual memoisation dead weight.
 
-### React 19 Specifics
-- `ref` is a normal prop. Do not use `forwardRef`.
-- Prefer server functions over client-side Actions for mutations; `useActionState`/`useOptimistic` are fine for pure UI feedback layered on top.
-
 ---
 
 ## 7. Anti-Effect Rules (`useEffect` Enforcement)
@@ -241,13 +214,13 @@ Both are sources of truth, for different boundaries. Keep them apart:
 
 ### Prohibited Patterns & Required Fixes
 
-| If the goal is... | ❌ DO NOT DO THIS | 👉 CLEAN ALTERNATIVE |
-| :--- | :--- | :--- |
-| **Transforming Data** | Syncing derived state via `useEffect` | Compute directly during render. |
-| **User Action Events** | Running code in an effect because the user clicked | Keep the logic in the event handler (`onClick`, `onSubmit`). |
-| **Resetting State** | Clearing state in an effect when an id prop changes | Pass a `key` to the container (`<RunView key={runId} />`). |
-| **Data Fetching** | `fetch` inside a component `useEffect` | Route loader + `createServerFn`. |
-| **Streaming AI output** | Manual `EventSource` wiring in an effect | `useChat` with `fetchServerSentEvents`. |
+| If the goal is...       | ❌ DO NOT DO THIS                                    | 👉 CLEAN ALTERNATIVE                                          |
+| :---------------------- | :-------------------------------------------------- | :----------------------------------------------------------- |
+| **Transforming Data**   | Syncing derived state via `useEffect`               | Compute directly during render.                              |
+| **User Action Events**  | Running code in an effect because the user clicked  | Keep the logic in the event handler (`onClick`, `onSubmit`). |
+| **Resetting State**     | Clearing state in an effect when an id prop changes | Pass a `key` to the container (`<RunView key={runId} />`).   |
+| **Data Fetching**       | `fetch` inside a component `useEffect`              | Route loader + `createServerFn`.                             |
+| **Streaming AI output** | Manual `EventSource` wiring in an effect            | `useChat` with `fetchServerSentEvents`.                      |
 
 ### Permitted
 Rejoining or tailing a durable run, and global browser listeners requiring cleanup. Both must return a cleanup function.
@@ -300,23 +273,23 @@ Mantine under SSR needs explicit setup in `src/routes/__root.tsx` — miss it an
 
 ### Repo Root
 
-| Path | Responsibility |
-| :--- | :--- |
-| `docker-compose.yml` | Local Postgres. |
-| `drizzle.config.ts` | drizzle-kit config — schema path, `out`, dialect, credentials. |
-| `drizzle/` | Generated SQL migrations. Committed, never hand-edited. |
-| `.env.example` | Every required variable, with dummy values. Committed. `.env` is not. |
+| Path                 | Responsibility                                                        |
+| :------------------- | :-------------------------------------------------------------------- |
+| `docker-compose.yml` | Local Postgres.                                                       |
+| `drizzle.config.ts`  | drizzle-kit config — schema path, `out`, dialect, credentials.        |
+| `drizzle/`           | Generated SQL migrations. Committed, never hand-edited.               |
+| `.env.example`       | Every required variable, with dummy values. Committed. `.env` is not. |
 
 ### Top-level Map (`src/`)
 
-| Path | Responsibility |
-| :--- | :--- |
-| `routes/` | File-based routes: page routes and `api.*.ts` server routes. Generated route trees (`routeTree.gen.ts`) are build artifacts — never edit by hand. |
-| `server/` | Server-only modules: `env.ts`, `ai/adapter.ts`, `ai/stream-store.ts`, `ai/tools/`, `db/client.ts`, `db/schema/`. Never imported by a component. |
-| `schema/` | Zod schemas shared across the client/server boundary — one file per domain. Single source of truth via `z.infer`. Drizzle tables are **not** here; they are server-only. |
-| `lib/` | Cross-cutting client integrations only. Not a junk drawer — a helper belongs next to its consumer. |
-| `components/` | **Only** components used by two or more routes. |
-| `theme.css`, `router.tsx` | Mantine theme tokens and router creation. |
+| Path                      | Responsibility                                                                                                                                                           |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/`                 | File-based routes: page routes and `api.*.ts` server routes. Generated route trees (`routeTree.gen.ts`) are build artifacts — never edit by hand.                        |
+| `server/`                 | Server-only modules: `env.ts`, `ai/adapter.ts`, `ai/stream-store.ts`, `ai/tools/`, `db/client.ts`, `db/schema/`. Never imported by a component.                          |
+| `schema/`                 | Zod schemas shared across the client/server boundary — one file per domain. Single source of truth via `z.infer`. Drizzle tables are **not** here; they are server-only. |
+| `lib/`                    | Cross-cutting client integrations only. Not a junk drawer — a helper belongs next to its consumer.                                                                       |
+| `components/`             | **Only** components used by two or more routes.                                                                                                                          |
+| `theme.css`, `router.tsx` | Mantine theme tokens and router creation.                                                                                                                                |
 
 ### Route Folders: definition vs implementation
 
@@ -368,21 +341,25 @@ These are the load-bearing conventions — the trees above are just their conseq
 
 ### Naming Conventions
 
-| Kind | Case | Example |
-| :--- | :--- | :--- |
-| Components + their folders | `PascalCase`, folder matches file | `RunTimeline/RunTimeline.tsx` |
-| Hooks | `kebab-case`, `use-` prefix | `hooks/use-run-stream.ts` |
-| Utils / schemas / server modules | `kebab-case` | `server/ai/stream-store.ts` |
-| Drizzle tables | `kebab-case` file, `camelCase` export, `snake_case` column | `db/schema/run-events.ts` → `runEvents` |
-| CSS Modules | matches its component | `RunTimeline.module.css` |
-| Static route segments | lowercase | `settings/` |
-| Server routes | `api.<name>.ts` | `api.chat.ts` |
-| Dynamic route segments | router convention | `runs_.$runId/` |
+| Kind                             | Case                                                       | Example                                 |
+| :------------------------------- | :--------------------------------------------------------- | :-------------------------------------- |
+| Components + their folders       | `PascalCase`, folder matches file                          | `RunTimeline/RunTimeline.tsx`           |
+| Hooks                            | `kebab-case`, `use-` prefix                                | `hooks/use-run-stream.ts`               |
+| Utils / schemas / server modules | `kebab-case`                                               | `server/ai/stream-store.ts`             |
+| Drizzle tables                   | `kebab-case` file, `camelCase` export, `snake_case` column | `db/schema/run-events.ts` → `runEvents` |
+| CSS Modules                      | matches its component                                      | `RunTimeline.module.css`                |
+| Static route segments            | lowercase                                                  | `settings/`                             |
+| Server routes                    | `api.<name>.ts`                                            | `api.chat.ts`                           |
+| Dynamic route segments           | router convention                                          | `runs_.$runId/`                         |
 
----
 
-## 10. Vite & Tooling
+<!-- intent-skills:start -->
+## Skill Loading
 
-- Plugin order in `vite.config.ts` is load-bearing: **`tanstackStart()` must come before `viteReact()`.**
-- Dev server is pinned to port 3000.
-- Biome owns both formatting and linting — do not add ESLint or Prettier.
+Before editing files for a substantial task:
+- Run `pnpm dlx @tanstack/intent@latest list` from the workspace root to see available local skills.
+- If a listed skill matches the task, run `pnpm dlx @tanstack/intent@latest load <package>#<skill>` before changing files.
+- Use the loaded `SKILL.md` guidance while making the change.
+- Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
+- Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
+<!-- intent-skills:end -->

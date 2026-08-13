@@ -11,6 +11,8 @@ import type {
 import { defineAIPersistence } from '@tanstack/ai-persistence'
 import type { SQL } from 'drizzle-orm'
 import { and, asc, desc, eq, isNotNull, lte } from 'drizzle-orm'
+import { z } from 'zod'
+import { modelMessageSchema } from '@/schema/model-message'
 import { db } from '@/server/db/client'
 import { chatInterrupts } from '@/server/db/schema/chat-interrupts'
 import { chatMessages } from '@/server/db/schema/chat-messages'
@@ -116,16 +118,44 @@ function deriveThreadTitle(messages: Array<ModelMessage>) {
     : text
 }
 
+/**
+ * A stored row, checked to still be a message.
+ *
+ * The column's `$type<ModelMessage>()` is a compile-time assertion over data
+ * that outlives this build, so the read is where the claim gets tested. A
+ * failure throws rather than dropping the row: a save is a full overwrite of
+ * what was loaded, so skipping one bad message here would delete it from the
+ * conversation on the next turn. Refusing to serve a transcript is recoverable;
+ * quietly editing one is not.
+ */
+function parseStoredMessage(
+  threadId: string,
+  position: number,
+  stored: unknown,
+) {
+  const parsed = modelMessageSchema.safeParse(stored)
+  if (parsed.success) return parsed.data
+
+  throw new Error(
+    `chat_messages row (thread ${threadId}, position ${position}) is not a valid message: ${z.prettifyError(parsed.error)}`,
+  )
+}
+
 const messageStore: MessageStore = {
   async loadThread(threadId) {
     const rows = await db
-      .select({ message: chatMessages.message })
+      .select({
+        position: chatMessages.position,
+        message: chatMessages.message,
+      })
       .from(chatMessages)
       .where(eq(chatMessages.threadId, threadId))
       .orderBy(asc(chatMessages.position))
 
     // An unknown thread is [], never null.
-    return rows.map((row) => row.message)
+    return rows.map((row) =>
+      parseStoredMessage(threadId, row.position, row.message),
+    )
   },
 
   // A save is a full overwrite: `messages` is the complete authoritative
