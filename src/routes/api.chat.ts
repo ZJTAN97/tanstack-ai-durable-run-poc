@@ -30,12 +30,6 @@ export const Route = createFileRoute('/api/chat')({
         const { messages, threadId, runId } =
           await chatParamsFromRequest(request)
 
-        // Expiring old logs rides along with starting a new run, because a POST
-        // is the only moment this server is reliably awake and about to grow the
-        // log anyway. Not awaited: housekeeping must never delay a reply, and
-        // never fail one — a swallowed sweep costs disk, a thrown one costs the
-        // user their answer. Not a timer either, since Vite re-executes this
-        // module on every save and would leak one per edit.
         void sweepExpiredRunLogs().catch((failure) => {
           console.error('[delivery-log] sweep failed', failure)
         })

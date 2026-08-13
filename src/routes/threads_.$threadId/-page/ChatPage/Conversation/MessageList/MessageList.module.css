@@ -1,4 +1,12 @@
+/* `position: relative` is load-bearing, not decoration. Every turn carries a
+   Mantine `VisuallyHidden` role caption, which is absolutely positioned — and an
+   absolutely positioned element is only clipped by an ancestor that is its
+   containing block. Without a positioned ancestor here those captions resolve
+   against the document instead, escape this scroll container, and stretch the
+   page to the full height of the transcript: two scrollbars, one of them the
+   window's. */
 .viewport {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;

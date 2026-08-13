@@ -1,10 +1,12 @@
-import { Button, Container, Group, Paper, Stack, Text } from '@mantine/core'
-import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
+import { Button, Container, Group, Stack, Text } from '@mantine/core'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
+import { useState } from 'react'
 
 import { createThreadId } from '@/lib/create-thread-id'
-
-import { formatRelativeTime } from './format-relative-time'
-import classes from './ThreadListPage.module.css'
+import type { ThreadSummary } from '@/schema/thread'
+import { DeleteThreadModal } from './DeleteThreadModal/DeleteThreadModal'
+import { deleteThread } from './delete-thread'
+import { ThreadRow } from './ThreadRow/ThreadRow'
 
 // Read through the route api rather than importing the route: the route already
 // imports this component, and importing it back would close the cycle.
@@ -21,6 +23,11 @@ const threadListRoute = getRouteApi('/')
 export function ThreadListPage() {
   const threads = threadListRoute.useLoaderData()
   const navigate = useNavigate()
+  const router = useRouter()
+  const [threadPendingDeletion, setThreadPendingDeletion] =
+    useState<ThreadSummary | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [failureReason, setFailureReason] = useState<string | null>(null)
 
   // A navigation, not local state — the URL is where the conversation's identity
   // has to live for the next reload to find it. Nothing is written here: the
@@ -30,6 +37,39 @@ export function ThreadListPage() {
       to: '/threads/$threadId',
       params: { threadId: createThreadId() },
     })
+  }
+
+  function cancelDeletion() {
+    setThreadPendingDeletion(null)
+    setFailureReason(null)
+  }
+
+  // The list comes from the loader, so the loader is what has to be told the row
+  // is gone — invalidating refetches it from the server rather than editing a
+  // local copy that the server has not confirmed.
+  async function confirmDeletion() {
+    if (threadPendingDeletion === null) {
+      return
+    }
+
+    setIsDeleting(true)
+    setFailureReason(null)
+
+    try {
+      await deleteThread({
+        data: { threadId: threadPendingDeletion.threadId },
+      })
+      await router.invalidate()
+      setThreadPendingDeletion(null)
+    } catch (error) {
+      setFailureReason(
+        error instanceof Error
+          ? `Could not delete this chat: ${error.message}`
+          : 'Could not delete this chat.',
+      )
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -50,41 +90,23 @@ export function ThreadListPage() {
         ) : (
           <Stack gap="xs">
             {threads.map((thread) => (
-              <Paper
+              <ThreadRow
                 key={thread.threadId}
-                className={classes.threadRow}
-                withBorder
-                radius="md"
-                px="md"
-                py="sm"
-                renderRoot={(paperProps) => (
-                  <Link
-                    to="/threads/$threadId"
-                    params={{ threadId: thread.threadId }}
-                    {...paperProps}
-                  />
-                )}
-              >
-                <Text fw={500} lineClamp={1}>
-                  {thread.title ?? 'Untitled conversation'}
-                </Text>
-                <Group gap="xs" wrap="nowrap">
-                  <Text size="xs" c="dimmed" ff="monospace" lineClamp={1}>
-                    {thread.threadId}
-                  </Text>
-                  {/* The server renders this in its timezone and its "now", and
-                      the browser would disagree on both. The text is a rough age,
-                      so the disagreement is cosmetic — worth suppressing rather
-                      than worth an effect that re-renders every row on mount. */}
-                  <Text size="xs" c="dimmed" suppressHydrationWarning>
-                    · {formatRelativeTime(thread.updatedAt)}
-                  </Text>
-                </Group>
-              </Paper>
+                thread={thread}
+                onRequestDeletion={() => setThreadPendingDeletion(thread)}
+              />
             ))}
           </Stack>
         )}
       </Stack>
+
+      <DeleteThreadModal
+        thread={threadPendingDeletion}
+        isDeleting={isDeleting}
+        failureReason={failureReason}
+        onCancel={cancelDeletion}
+        onConfirm={confirmDeletion}
+      />
     </Container>
   )
 }
