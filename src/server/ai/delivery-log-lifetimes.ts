@@ -1,8 +1,18 @@
 import { and, isNull, lt, or, sql } from 'drizzle-orm'
-import { PRODUCER_SILENCE_TIMEOUT_MS } from '@/server/ai/stream-store'
 import { db } from '@/server/db/client'
 import { deliveryLogs } from '@/server/db/schema/delivery-logs'
 import { env } from '@/server/env'
+
+/**
+ * How long a reader parks on a log that has stored something but has gone quiet,
+ * before calling its producer dead.
+ *
+ * It lives here rather than beside its use in the reader because it is one half
+ * of a single policy: how long a silent producer is given, and how long past
+ * that a log it abandoned is kept. Splitting them across modules would let the
+ * two drift into contradicting each other.
+ */
+export const PRODUCER_SILENCE_TIMEOUT_MS = 45_000
 
 /**
  * How long past its last sign of life a never-closed log becomes reclaimable.

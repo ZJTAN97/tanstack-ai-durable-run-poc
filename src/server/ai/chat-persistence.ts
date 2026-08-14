@@ -1,4 +1,3 @@
-import type { ModelMessage } from '@tanstack/ai'
 import type {
   ChatPersistence,
   InterruptRecord,
@@ -20,28 +19,6 @@ import { chatMetadata } from '@/server/db/schema/chat-metadata'
 import { chatRuns } from '@/server/db/schema/chat-runs'
 import { chatThreads } from '@/server/db/schema/chat-threads'
 
-/**
- * The server's own copy of the conversation, in Postgres.
- *
- * This is the single seam for conversation state: the chat endpoint hands this
- * value to the persistence middleware and knows nothing about what is behind
- * it. It is a different layer from the delivery log — that records the stream
- * events of one run, this records the messages of a conversation — and the two
- * deliberately share no code.
- *
- * This copy is authoritative, and `reconstructChat` on the endpoint's GET is
- * what reads it back: the client caches nothing and paints what `loadThread`
- * returns. A save is still a full overwrite driven by the transcript the client
- * posted, because that is the contract the middleware implements — the shift is
- * in who is believed on load, not in how a turn is written.
- *
- * Every rule marked below is one the library's conformance kit checks. That kit
- * is not run here — the project has no test framework — so these are the places
- * to look first if the adapter ever misbehaves.
- */
-
-// Records omit absent optionals rather than materialising them as nulls, so
-// they compare cleanly against the library's reference in-memory backend.
 function mapRun(row: typeof chatRuns.$inferSelect): RunRecord {
   return {
     runId: row.runId,
@@ -80,42 +57,6 @@ function mapInterrupt(
     ...(row.resolvedAt !== null ? { resolvedAt: row.resolvedAt } : {}),
     ...(row.response !== null ? { response: row.response } : {}),
   }
-}
-
-const TITLE_MAX_LENGTH = 80
-
-// A message's content is a string, null, or a list of parts, and only the text
-// parts can name a conversation — an opening turn that is a single image has
-// nothing to read off.
-function readMessageText(message: ModelMessage) {
-  if (typeof message.content === 'string') return message.content
-  if (message.content === null) return ''
-
-  return message.content
-    .filter((part) => part.type === 'text')
-    .map((part) => part.content)
-    .join(' ')
-}
-
-/**
- * What the thread list calls this conversation: its opening question, shortened.
- *
- * Derived rather than asked for, because a POC that stops to demand a name
- * before the first message is a POC nobody finishes using. It is recomputed on
- * every save, which is free here — the first user message does not change, so
- * the same title is rewritten — and means a thread cannot keep a title belonging
- * to a transcript it no longer has.
- */
-function deriveThreadTitle(messages: Array<ModelMessage>) {
-  const opening = messages.find((message) => message.role === 'user')
-  if (opening === undefined) return null
-
-  const text = readMessageText(opening).replace(/\s+/g, ' ').trim()
-  if (text === '') return null
-
-  return text.length > TITLE_MAX_LENGTH
-    ? `${text.slice(0, TITLE_MAX_LENGTH).trimEnd()}…`
-    : text
 }
 
 /**
@@ -163,7 +104,7 @@ const messageStore: MessageStore = {
   // One transaction, because a thread holding half a conversation must never be
   // observable.
   async saveThread(threadId, messages) {
-    const title = deriveThreadTitle(messages)
+    const title = 'Untitled'
 
     await db.transaction(async (transaction) => {
       await transaction

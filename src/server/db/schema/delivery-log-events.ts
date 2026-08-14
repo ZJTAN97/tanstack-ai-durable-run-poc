@@ -22,7 +22,7 @@ import { deliveryLogs } from '@/server/db/schema/delivery-logs'
  * and is the only place a chunk is not passed through untouched.
  *
  * The log does not grow without bound: it is reclaimed on a timer by run, not by
- * row, and `delivery-log-retention.ts` owns when. Reclamation is safe because
+ * row, and `delivery-log-lifetimes.ts` owns when. Reclamation is safe because
  * this table is a transport buffer for clients that dropped mid-stream — what was
  * said is kept, separately and once, in the conversation transcript.
  */

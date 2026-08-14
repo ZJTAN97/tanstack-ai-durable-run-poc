@@ -38,5 +38,6 @@
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "[markdown]": {
     "editor.defaultFormatter": "yzhang.markdown-all-in-one"
-  }
+  },
+  "js/ts.experimental.useTsgo": true
 }
