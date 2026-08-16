@@ -1,4 +1,4 @@
-import { type StreamChunk, type StreamDurability } from '@tanstack/ai'
+import type { StreamChunk, StreamDurability } from '@tanstack/ai'
 import { and, asc, desc, eq, gt, sql } from 'drizzle-orm'
 import {
   appendNotificationChannel,
@@ -61,40 +61,6 @@ function namesItsOwnRun(offset: string | null): offset is string {
     offset !== FROM_START_OFFSET &&
     offset !== FROM_TAIL_OFFSET
   )
-}
-
-async function readLogState(runId: string) {
-  const [log] = await db
-    .select({ closedAt: deliveryLogs.closedAt })
-    .from(deliveryLogs)
-    .where(eq(deliveryLogs.runId, runId))
-    .limit(1)
-
-  return log
-}
-
-async function readTailPosition(runId: string) {
-  const [event] = await db
-    .select({ id: deliveryLogEvents.id })
-    .from(deliveryLogEvents)
-    .where(eq(deliveryLogEvents.runId, runId))
-    .orderBy(desc(deliveryLogEvents.id))
-    .limit(1)
-
-  return event?.id ?? 0
-}
-
-function readEventsAfter(runId: string, position: number) {
-  return db
-    .select({ id: deliveryLogEvents.id, chunk: deliveryLogEvents.chunk })
-    .from(deliveryLogEvents)
-    .where(
-      and(
-        eq(deliveryLogEvents.runId, runId),
-        gt(deliveryLogEvents.id, position),
-      ),
-    )
-    .orderBy(asc(deliveryLogEvents.id))
 }
 
 export function streamStore(
@@ -180,7 +146,11 @@ export function streamStore(
     // empty list rather than throwing — deliberately not read's unknown-run
     // failure path, which the library allows to fail and this may not.
     snapshot: async () => {
-      const events = await readEventsAfter(runId, 0)
+      const events = await db
+        .select({ id: deliveryLogEvents.id, chunk: deliveryLogEvents.chunk })
+        .from(deliveryLogEvents)
+        .where(eq(deliveryLogEvents.runId, runId))
+        .orderBy(asc(deliveryLogEvents.id))
 
       return events.map((event) => ({
         offset: encodeOffset(runId, event.id),
@@ -190,7 +160,12 @@ export function streamStore(
 
     read: async function* (offset, signal) {
       const isFromStartJoin = !namesItsOwnRun(offset)
-      const log = await readLogState(runId)
+
+      const [log] = await db
+        .select({ closedAt: deliveryLogs.closedAt })
+        .from(deliveryLogs)
+        .where(eq(deliveryLogs.runId, runId))
+        .limit(1)
 
       // Peek, never create. A concrete position for a run with no log means the
       // run is unknown: fail, and do not insert a row — an inserted row would
@@ -202,7 +177,14 @@ export function streamStore(
       let position = 0
 
       if (offset === FROM_TAIL_OFFSET) {
-        position = await readTailPosition(runId)
+        const [tail] = await db
+          .select({ id: deliveryLogEvents.id })
+          .from(deliveryLogEvents)
+          .where(eq(deliveryLogEvents.runId, runId))
+          .orderBy(desc(deliveryLogEvents.id))
+          .limit(1)
+
+        position = tail?.id ?? 0
       } else if (namesItsOwnRun(offset)) {
         const decoded = decodeOffset(offset)
 
@@ -225,8 +207,25 @@ export function streamStore(
         for (;;) {
           // Read the log's state *before* its events: if it is closed at this
           // point, the events fetched next are necessarily the complete set.
-          const state = await readLogState(runId)
-          const events = await readEventsAfter(runId, position)
+          const [state] = await db
+            .select({ closedAt: deliveryLogs.closedAt })
+            .from(deliveryLogs)
+            .where(eq(deliveryLogs.runId, runId))
+            .limit(1)
+
+          const events = await db
+            .select({
+              id: deliveryLogEvents.id,
+              chunk: deliveryLogEvents.chunk,
+            })
+            .from(deliveryLogEvents)
+            .where(
+              and(
+                eq(deliveryLogEvents.runId, runId),
+                gt(deliveryLogEvents.id, position),
+              ),
+            )
+            .orderBy(asc(deliveryLogEvents.id))
 
           for (const event of events) {
             position = event.id
