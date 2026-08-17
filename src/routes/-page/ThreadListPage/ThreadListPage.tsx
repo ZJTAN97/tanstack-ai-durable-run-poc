@@ -10,14 +10,6 @@ import { useThreadList } from './hooks/use-thread-list'
 import { RenameThreadModal } from './RenameThreadModal/RenameThreadModal'
 import { ThreadRow } from './ThreadRow/ThreadRow'
 
-/**
- * Every conversation this device has synced, as a way in to each one.
- *
- * Read from the local database rather than fetched: the list renders before the
- * network is consulted and keeps rendering when there is no network at all. The
- * "generating" badge arrives the same way — this device learns a run is in
- * flight without ever attaching to its stream.
- */
 export function ThreadListPage() {
   const { data: threads } = useThreadList()
   const navigate = useNavigate()
@@ -28,9 +20,6 @@ export function ThreadListPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [failureReason, setFailureReason] = useState<string | null>(null)
 
-  // A thread exists from the moment it is created, before anything has been said
-  // in it. The row is written locally and replicated in the background, so this
-  // works offline and the navigation does not wait on it.
   function startNewChat() {
     const threadId = createThreadId()
     threadCollection.insert({ id: threadId, title: null, updated_at: null })
@@ -51,9 +40,6 @@ export function ThreadListPage() {
     }
   }
 
-  // Awaited, unlike the other two, because the confirmation dialog stays open
-  // and busy until the write is durable — a delete that silently failed would
-  // otherwise look done.
   async function confirmDeletion() {
     if (threadPendingDeletion === null) return
 
