@@ -13,9 +13,9 @@ import { z } from 'zod'
  *
  * An id this rejects is refused rather than silently corrected: a request for
  * thread A that quietly serves thread B is worse than an error. An id this
- * *accepts* but that names no stored conversation is not an error at all — that
- * is precisely what starting a new chat looks like, one message before it is
- * saved.
+ * *accepts* but that names no stored conversation is still not an error — a
+ * device that has not synced a thread can be addressed at it, and starting a new
+ * chat writes the row locally before the server has heard of it either way.
  *
  * There is no run id here, and none in the route path. A run names one turn and
  * is minted by the server when that turn starts; the chat client tracks it. A
@@ -26,20 +26,3 @@ export const threadIdentifier = z
   .min(1)
   .max(64, 'must be at most 64 characters')
   .regex(/^[A-Za-z0-9_-]+$/, 'may contain only letters, digits, "-" and "_"')
-
-/**
- * One row of the thread list.
- *
- * A deliberate narrowing of the `chat_threads` row rather than the row itself: a
- * database row is not automatically a valid API payload, and the list has no
- * business knowing the column shape. `updatedAt` crosses as an ISO string so
- * what arrives is what was sent, without depending on how the transport revives
- * dates.
- */
-export const threadSummarySchema = z.object({
-  threadId: threadIdentifier,
-  title: z.string().nullable(),
-  updatedAt: z.iso.datetime({ offset: true }),
-})
-
-export type ThreadSummary = z.infer<typeof threadSummarySchema>

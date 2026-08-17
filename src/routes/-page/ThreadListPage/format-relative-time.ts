@@ -9,15 +9,15 @@ const DIVISIONS = [
 ] as const
 
 /**
- * "3 minutes ago", from an ISO timestamp.
+ * "3 minutes ago".
  *
  * Relative rather than absolute so the list stays readable without a timezone
  * or a locale decision, and so a row's age is legible at a glance — which is the
  * only thing the timestamp is doing here.
  */
-export function formatRelativeTime(isoTimestamp: string) {
+export function formatRelativeTime(timestamp: Date) {
   const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' })
-  let duration = (new Date(isoTimestamp).getTime() - Date.now()) / 1000
+  let duration = (timestamp.getTime() - Date.now()) / 1000
 
   for (const division of DIVISIONS) {
     if (Math.abs(duration) < division.amount) {

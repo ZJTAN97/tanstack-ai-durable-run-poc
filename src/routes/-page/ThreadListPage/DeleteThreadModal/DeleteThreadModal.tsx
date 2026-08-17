@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core'
 
-import type { ThreadSummary } from '@/schema/thread'
+import type { ThreadListRow } from '../hooks/use-thread-list'
 
 /**
  * The confirmation step for a delete that cannot be undone.
@@ -16,7 +16,7 @@ export function DeleteThreadModal({
   onCancel,
   onConfirm,
 }: {
-  thread: ThreadSummary | null
+  thread: ThreadListRow | null
   isDeleting: boolean
   failureReason: string | null
   onCancel: () => void
@@ -32,7 +32,7 @@ export function DeleteThreadModal({
       <Stack gap="md">
         <Text size="sm">
           <Text span fw={500}>
-            {thread?.title ?? 'Untitled conversation'}
+            {thread?.title ?? 'Untitled'}
           </Text>{' '}
           and everything the server holds for it — the transcript and its run
           history — will be removed. This cannot be undone.

@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/service-schema@latest/json-schema/powersync-config.json
+#
+# `!env NAME` substitutes an environment variable; only names starting with `PS_`
+# are eligible, which is why the values docker-compose.yml passes in are prefixed
+# that way rather than matching the application's own variable names.
+
+_type: self-hosted
+
+telemetry:
+  disable_telemetry_sharing: true
+
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      # Container-to-container on a private compose network.
+      sslmode: disable
+
+# Bucket storage is the service's own bookkeeping, not application data. It
+# shares the Postgres server — supported from Postgres 14 — and the service
+# creates and owns a `powersync` schema next to the application's `public`.
+# Nothing in `src/server/db` reads or writes it.
+storage:
+  type: postgresql
+  uri: !env PS_STORAGE_URI
+  sslmode: disable
+
+port: !env PS_PORT
+
+sync_config:
+  path: sync-rules.yaml
+
+client_auth:
+  # A shared HS256 secret, so the token endpoint in the app can mint tokens the
+  # service will accept without a key-distribution step. Swapping this block for
+  # a `jwks_uri` pointing at Clerk is the whole server-side change that migration
+  # needs — the sync rules read `sub` and nothing else.
+  jwks:
+    keys:
+      - kty: 'oct'
+        k: !env PS_JWT_KEY
+        alg: 'HS256'
+        kid: 'durable-run-poc'
+  audience: ['powersync']
+
+system:
+  logging:
+    level: info
+    format: text

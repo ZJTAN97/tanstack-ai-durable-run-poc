@@ -103,16 +103,17 @@ const messageStore: MessageStore = {
   // transcript, with no diff information, so the thread's rows are rewritten.
   // One transaction, because a thread holding half a conversation must never be
   // observable.
+  //
+  // `title` is untouched on both paths. It is the name a user gave, and a save
+  // that wrote one would overwrite it on every turn.
   async saveThread(threadId, messages) {
-    const title = 'Untitled'
-
     await db.transaction(async (transaction) => {
       await transaction
         .insert(chatThreads)
-        .values({ threadId, title, updatedAt: new Date() })
+        .values({ threadId, updatedAt: new Date() })
         .onConflictDoUpdate({
           target: chatThreads.threadId,
-          set: { title, updatedAt: new Date() },
+          set: { updatedAt: new Date() },
         })
 
       await transaction

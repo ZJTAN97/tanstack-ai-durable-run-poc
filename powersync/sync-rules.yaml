@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/service-sync-rules@latest/schema/sync_rules.json
+#
+# What Sync carries: Threads and the state of their Runs. The Transcript and the
+# Delivery Log are deliberately absent — see docs/adr/0001.
+#
+# Changes here are not watched; restart the powersync container to apply them.
+
+bucket_definitions:
+  # One bucket per Thread the requesting user owns. Runs ride along by belonging
+  # to a Thread already in the bucket, which is why they carry no owner column
+  # of their own (docs/adr/0002).
+  user_threads:
+    parameters: SELECT thread_id FROM chat_threads WHERE user_id = request.user_id()
+    data:
+      # PowerSync requires an `id` column; aliasing the existing primary key
+      # meets that without a surrogate key or a schema migration.
+      - SELECT thread_id AS id, title, updated_at FROM chat_threads WHERE thread_id = bucket.thread_id
+      # Columns are listed rather than `SELECT *`: sandbox_key, detached_since,
+      # cancel_requested and driver_epoch are reclaim machinery with no reader on
+      # the client, and a narrower row is less traffic per Run.
+      - SELECT run_id AS id, thread_id, status, started_at, finished_at, error, usage FROM chat_runs WHERE thread_id = bucket.thread_id

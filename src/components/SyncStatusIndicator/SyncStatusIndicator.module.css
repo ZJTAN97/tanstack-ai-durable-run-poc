@@ -1,0 +1,6 @@
+.root {
+  position: fixed;
+  right: var(--mantine-spacing-md);
+  bottom: var(--mantine-spacing-md);
+  z-index: 100;
+}

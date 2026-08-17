@@ -8,12 +8,24 @@ importers:
 
   .:
     dependencies:
+      '@journeyapps/wa-sqlite':
+        specifier: 1.7.2
+        version: 1.7.2
       '@mantine/core':
         specifier: 9.5.1
         version: 9.5.1(@mantine/hooks@9.5.1(react@19.2.8))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@mantine/hooks':
         specifier: 9.5.1
         version: 9.5.1(react@19.2.8)
+      '@powersync/drizzle-driver':
+        specifier: 0.7.4
+        version: 0.7.4(@powersync/common@1.57.3)(drizzle-orm@0.45.2(@types/pg@8.21.0)(pg@8.23.0))
+      '@powersync/react':
+        specifier: 1.10.0
+        version: 1.10.0(@powersync/common@1.57.3)(react@19.2.8)
+      '@powersync/web':
+        specifier: 1.39.1
+        version: 1.39.1(@journeyapps/wa-sqlite@1.7.2)(@powersync/common@1.57.3)
       '@tanstack/ai':
         specifier: 0.44.0
         version: 0.44.0(zod@4.4.3)
@@ -29,6 +41,12 @@ importers:
       '@tanstack/markdown':
         specifier: 0.0.13
         version: 0.0.13(react@19.2.8)
+      '@tanstack/powersync-db-collection':
+        specifier: 0.1.58
+        version: 0.1.58(@powersync/common@1.57.3)(typescript@7.0.2)
+      '@tanstack/react-db':
+        specifier: 0.2.1
+        version: 0.2.1(react@19.2.8)(typescript@7.0.2)
       '@tanstack/react-router':
         specifier: 1.170.27
         version: 1.170.27(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -38,6 +56,9 @@ importers:
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@types/pg@8.21.0)(pg@8.23.0)
+      jose:
+        specifier: 6.2.9
+        version: 6.2.9
       pg:
         specifier: 8.23.0
         version: 8.23.0
@@ -699,6 +720,9 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
+  '@journeyapps/wa-sqlite@1.7.2':
+    resolution: {integrity: sha512-EVRMzqHtHgJBFcTGOgQ5/YlxrYFSXLFFztC5yo6+jQx2mqFR+a1kkLV4IirquiBzIonjmYXfBtvZ26fmI8r9Nw==}
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -748,6 +772,28 @@ packages:
 
   '@oxc-project/types@0.144.0':
     resolution: {integrity: sha512-nuhZIOLuI6TFQ32I/WnUx+SCPY7SdSKwgnFHydAuoS1+Z4BRcaP+RRJmGzl9lw+0OFF7UmaESf7KQRXaNLHypg==}
+
+  '@powersync/common@1.57.3':
+    resolution: {integrity: sha512-gzXcdfO1EnwXNBITDbnx7oN23d91HjoumS/XzPmVZEwV6S/IBcao/Unv4+aQDvijQVzTtXI+jTl98i9v+TrODQ==}
+
+  '@powersync/drizzle-driver@0.7.4':
+    resolution: {integrity: sha512-dyT2PxedrCRGp/0ahHFxVs65MVrGhomV0rU79NPA3OD/P89j7LNWGv3PLMaogP2r+yVcGLv81gfCqeR/WmSpMw==}
+    peerDependencies:
+      '@powersync/common': ^1.56.0
+      drizzle-orm: <1.0.0
+
+  '@powersync/react@1.10.0':
+    resolution: {integrity: sha512-orM29qocbF8zYTBM27j9nPNztyplpbNVaw8djpqxl8N2wESqHTbHOKpatg+Fa5aofgjzmrkiGwevJvCbiWYYWQ==}
+    peerDependencies:
+      '@powersync/common': ^1.51.0
+      react: '*'
+
+  '@powersync/web@1.39.1':
+    resolution: {integrity: sha512-mu01OE3sQrulRgvDOWw1xRbRbPhJMOfz5sIVIQ2lENGDkqgWdlRhpkHVfeVi80tCZoP/AFYkQAFRszCgzqFUxQ==}
+    hasBin: true
+    peerDependencies:
+      '@journeyapps/wa-sqlite': ^1.5.0
+      '@powersync/common': ^1.57.3
 
   '@rolldown/binding-android-arm64@1.2.4':
     resolution: {integrity: sha512-jHC2cnyKz5xU2fhECtFl8OZ83cYNt13GZQD+0uMJ/X3o+ijmd56okHhTUwxVSHPx1IRVIJEZ1/1pPzeLCU6XKA==}
@@ -888,6 +934,16 @@ packages:
       '@opentelemetry/api':
         optional: true
 
+  '@tanstack/db-ivm@0.1.18':
+    resolution: {integrity: sha512-+pZJiRKdoKRM5Epq9T7otD9ZJl82pRFauo7LKuJGrarjVKQ7r+QQlPe3kGdN9LEKSnuNGIWjX9OOY4M8kH4eLw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db@0.7.2':
+    resolution: {integrity: sha512-gQjUIMKRK1ktg+dXFsTNK2pGgasGOz/qV877nG6vOfC5qggu6yDZzFn9PVhKp5t8um/4kFc4cfPlJP2WM6RmjA==}
+    peerDependencies:
+      typescript: '>=4.7'
+
   '@tanstack/devtools-event-client@0.4.4':
     resolution: {integrity: sha512-6T5Yop/793YI+H+5J8Hsyj4kCih9sl4t3ElLgKioW5hk3ocn+ZdSJ94tT7vL7uabxSugWYBZlOTMPzEw2puvQw==}
     engines: {node: '>=18'}
@@ -907,6 +963,20 @@ packages:
         optional: true
       react:
         optional: true
+
+  '@tanstack/pacer-lite@0.2.2':
+    resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
+    engines: {node: '>=18'}
+
+  '@tanstack/powersync-db-collection@0.1.58':
+    resolution: {integrity: sha512-ttAtHgZDaU4piWGS3LrdfLxE36/iJJNAE2or/FNgC8yHRYpLDB37enU53q7kmagaOeOODXV6jjYn3khkEp5oow==}
+    peerDependencies:
+      '@powersync/common': ^1.41.0
+
+  '@tanstack/react-db@0.2.1':
+    resolution: {integrity: sha512-uHOnzMFiMN/8yqQiNM9PAs5N0+fiCHEF3UCEPy1R2BM7USyMqkBe+CNHUTo97vb+S20krvOUhWMbGEJjeSZZZg==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   '@tanstack/react-router@1.170.27':
     resolution: {integrity: sha512-Hxl49xzd8ffWd2ZMigqfXZmpySpixWGvjq5zfh2nK2DbzzDH6IGVh+iUuwarK9MJNcnhWPZ85tOoy6o/OmNlww==}
@@ -1222,6 +1292,13 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  comlink@4.4.2:
+    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
+
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
+
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
@@ -1389,6 +1466,10 @@ packages:
   fetchdts@0.1.7:
     resolution: {integrity: sha512-YoZjBdafyLIop9lSxXVI33oLD5kN31q4Td+CasofLLYeLXRFeOsuOw0Uo+XNRi9PZlbfdlN2GmRtm4tCEQ9/KA==}
 
+  fractional-indexing@3.4.0:
+    resolution: {integrity: sha512-8J3glhz2rrpKG6KmI7wmJo3zH1VjeOpN+vTJSw1fOyO+Viqq3zX6/5NGh6oaZB2qIAYdOYuu5Dz9xp4faOO0Pg==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -1422,6 +1503,12 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@6.2.9:
+    resolution: {integrity: sha512-XrchZOFZUl/T3vTwRe8XK+cJrGtMF4th1ARnDfwbBXFKThGhlsxEE4Zu03AD/bjJSt/9jT/mxrOCkJWOg77aPA==}
+
+  js-logger@1.6.1:
+    resolution: {integrity: sha512-yTgMCPXVjhmg28CuUH8CKjU+cIKL/G+zTu4Fn4lQxs8mRFH/03QTNvEFngcxfg/gRDiQAOoyCKmMTOm9ayOzXA==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -1531,6 +1618,10 @@ packages:
   node-releases@2.0.53:
     resolution: {integrity: sha512-D9UOmYG3UH1V+ENW56t5QXBwJw1YEY18ruVeus89Rw+SyIgjPkCO84bRzO3uNIYosJbNwiabWVn48o3uJLjxFQ==}
     engines: {node: '>=18'}
+
+  p-defer@4.0.1:
+    resolution: {integrity: sha512-Mr5KC5efvAK5VUptYEIopP1bakB85k2IWXaRC0rsh1uwn1L6M0LVml8OIQ4Gudg4oyZakf7FmeRLkMMtZW1i5A==}
+    engines: {node: '>=12'}
 
   partial-json@0.1.7:
     resolution: {integrity: sha512-Njv/59hHaokb/hRUjce3Hdv12wd60MtM9Z5Olmn+nehe0QDAsRtRbJPvJ0Z91TusF0SuZRIvnM+S4l6EIP8leA==}
@@ -1713,6 +1804,9 @@ packages:
   seroval@1.6.2:
     resolution: {integrity: sha512-mPT+SD2TrlB6wvte1KkYOYUkubaTbd6pZ/6Kk3C9nxzrHmCZyhxOO7XGAeL7f+yLKZglzGtM9odUVvg/EhO+vQ==}
     engines: {node: '>=10'}
+
+  sorted-btree@1.8.1:
+    resolution: {integrity: sha512-395+XIP+wqNn3USkFSrNz7G3Ss/MXlZEqesxvzCRFwL14h6e8LukDHdLBePn5pwbm5OQ9vGu8mDyz2lLDIqamQ==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -2319,6 +2413,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
+  '@journeyapps/wa-sqlite@1.7.2': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -2377,6 +2473,28 @@ snapshots:
       zod: 4.4.3
 
   '@oxc-project/types@0.144.0': {}
+
+  '@powersync/common@1.57.3':
+    dependencies:
+      js-logger: 1.6.1
+
+  '@powersync/drizzle-driver@0.7.4(@powersync/common@1.57.3)(drizzle-orm@0.45.2(@types/pg@8.21.0)(pg@8.23.0))':
+    dependencies:
+      '@powersync/common': 1.57.3
+      drizzle-orm: 0.45.2(@types/pg@8.21.0)(pg@8.23.0)
+      tslib: 2.8.1
+
+  '@powersync/react@1.10.0(@powersync/common@1.57.3)(react@19.2.8)':
+    dependencies:
+      '@powersync/common': 1.57.3
+      react: 19.2.8
+
+  '@powersync/web@1.39.1(@journeyapps/wa-sqlite@1.7.2)(@powersync/common@1.57.3)':
+    dependencies:
+      '@journeyapps/wa-sqlite': 1.7.2
+      '@powersync/common': 1.57.3
+      comlink: 4.4.2
+      commander: 12.1.0
 
   '@rolldown/binding-android-arm64@1.2.4':
     optional: true
@@ -2470,6 +2588,19 @@ snapshots:
     transitivePeerDependencies:
       - zod
 
+  '@tanstack/db-ivm@0.1.18(typescript@7.0.2)':
+    dependencies:
+      fractional-indexing: 3.4.0
+      sorted-btree: 1.8.1
+      typescript: 7.0.2
+
+  '@tanstack/db@0.7.2(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.18(typescript@7.0.2)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 7.0.2
+
   '@tanstack/devtools-event-client@0.4.4': {}
 
   '@tanstack/history@1.162.1': {}
@@ -2477,6 +2608,28 @@ snapshots:
   '@tanstack/markdown@0.0.13(react@19.2.8)':
     optionalDependencies:
       react: 19.2.8
+
+  '@tanstack/pacer-lite@0.2.2': {}
+
+  '@tanstack/powersync-db-collection@0.1.58(@powersync/common@1.57.3)(typescript@7.0.2)':
+    dependencies:
+      '@powersync/common': 1.57.3
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.7.2(typescript@7.0.2)
+      '@tanstack/store': 0.9.3
+      debug: 4.4.3
+      p-defer: 4.0.1
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
+  '@tanstack/react-db@0.2.1(react@19.2.8)(typescript@7.0.2)':
+    dependencies:
+      '@tanstack/db': 0.7.2(typescript@7.0.2)
+      react: 19.2.8
+      use-sync-external-store: 1.6.0(react@19.2.8)
+    transitivePeerDependencies:
+      - typescript
 
   '@tanstack/react-router@1.170.27(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -2809,6 +2962,10 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  comlink@4.4.2: {}
+
+  commander@12.1.0: {}
+
   convert-source-map@2.0.0: {}
 
   cookie-es@3.1.1: {}
@@ -2934,6 +3091,8 @@ snapshots:
 
   fetchdts@0.1.7: {}
 
+  fractional-indexing@3.4.0: {}
+
   fsevents@2.3.3:
     optional: true
 
@@ -2953,6 +3112,10 @@ snapshots:
   isbot@5.2.1: {}
 
   jiti@2.7.0: {}
+
+  jose@6.2.9: {}
+
+  js-logger@1.6.1: {}
 
   js-tokens@4.0.0: {}
 
@@ -3026,6 +3189,8 @@ snapshots:
   nanoid@3.3.18: {}
 
   node-releases@2.0.53: {}
+
+  p-defer@4.0.1: {}
 
   partial-json@0.1.7: {}
 
@@ -3195,6 +3360,8 @@ snapshots:
       seroval: 1.6.2
 
   seroval@1.6.2: {}
+
+  sorted-btree@1.8.1: {}
 
   source-map-js@1.2.1: {}
 

@@ -1,72 +1,71 @@
 import { Button, Container, Group, Stack, Text } from '@mantine/core'
-import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-
 import { createThreadId } from '@/lib/create-thread-id'
-import type { ThreadSummary } from '@/schema/thread'
+import { threadCollection } from '@/lib/powersync/collections'
+
 import { DeleteThreadModal } from './DeleteThreadModal/DeleteThreadModal'
-import { deleteThread } from './delete-thread'
+import type { ThreadListRow } from './hooks/use-thread-list'
+import { useThreadList } from './hooks/use-thread-list'
+import { RenameThreadModal } from './RenameThreadModal/RenameThreadModal'
 import { ThreadRow } from './ThreadRow/ThreadRow'
 
-// Read through the route api rather than importing the route: the route already
-// imports this component, and importing it back would close the cycle.
-const threadListRoute = getRouteApi('/')
-
 /**
- * Every conversation the server is holding, as a way in to each one.
+ * Every conversation this device has synced, as a way in to each one.
  *
- * This is the home route because it is the honest answer to what this app has:
- * the transcripts live in Postgres, not in a browser, so they can be listed at
- * all — and a thread opened from here is the same thread on any device, which is
- * the durability claim stated as a piece of navigation rather than a paragraph.
+ * Read from the local database rather than fetched: the list renders before the
+ * network is consulted and keeps rendering when there is no network at all. The
+ * "generating" badge arrives the same way — this device learns a run is in
+ * flight without ever attaching to its stream.
  */
 export function ThreadListPage() {
-  const threads = threadListRoute.useLoaderData()
+  const { data: threads } = useThreadList()
   const navigate = useNavigate()
-  const router = useRouter()
+  const [threadPendingRename, setThreadPendingRename] =
+    useState<ThreadListRow | null>(null)
   const [threadPendingDeletion, setThreadPendingDeletion] =
-    useState<ThreadSummary | null>(null)
+    useState<ThreadListRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [failureReason, setFailureReason] = useState<string | null>(null)
 
-  // A navigation, not local state — the URL is where the conversation's identity
-  // has to live for the next reload to find it. Nothing is written here: the
-  // thread row appears once the first turn is saved.
+  // A thread exists from the moment it is created, before anything has been said
+  // in it. The row is written locally and replicated in the background, so this
+  // works offline and the navigation does not wait on it.
   function startNewChat() {
-    navigate({
-      to: '/threads/$threadId',
-      params: { threadId: createThreadId() },
-    })
+    const threadId = createThreadId()
+    threadCollection.insert({ id: threadId, title: null, updated_at: null })
+    navigate({ to: '/threads/$threadId', params: { threadId } })
   }
 
-  function cancelDeletion() {
-    setThreadPendingDeletion(null)
-    setFailureReason(null)
-  }
+  function renameThread(title: string | null) {
+    if (threadPendingRename === null) return
 
-  // The list comes from the loader, so the loader is what has to be told the row
-  // is gone — invalidating refetches it from the server rather than editing a
-  // local copy that the server has not confirmed.
-  async function confirmDeletion() {
-    if (threadPendingDeletion === null) {
-      return
+    try {
+      threadCollection.update(threadPendingRename.id, (draft) => {
+        draft.title = title
+      })
+      setThreadPendingRename(null)
+      setFailureReason(null)
+    } catch (error) {
+      setFailureReason(describeFailure(error, 'Could not rename this chat.'))
     }
+  }
+
+  // Awaited, unlike the other two, because the confirmation dialog stays open
+  // and busy until the write is durable — a delete that silently failed would
+  // otherwise look done.
+  async function confirmDeletion() {
+    if (threadPendingDeletion === null) return
 
     setIsDeleting(true)
     setFailureReason(null)
 
     try {
-      await deleteThread({
-        data: { threadId: threadPendingDeletion.threadId },
-      })
-      await router.invalidate()
+      await threadCollection.delete(threadPendingDeletion.id).isPersisted
+        .promise
       setThreadPendingDeletion(null)
     } catch (error) {
-      setFailureReason(
-        error instanceof Error
-          ? `Could not delete this chat: ${error.message}`
-          : 'Could not delete this chat.',
-      )
+      setFailureReason(describeFailure(error, 'Could not delete this chat.'))
     } finally {
       setIsDeleting(false)
     }
@@ -91,22 +90,40 @@ export function ThreadListPage() {
           <Stack gap="xs">
             {threads.map((thread) => (
               <ThreadRow
-                key={thread.threadId}
+                key={thread.id}
                 thread={thread}
-                onRequestDeletion={() => setThreadPendingDeletion(thread)}
+                onRequestRename={() => {
+                  setFailureReason(null)
+                  setThreadPendingRename(thread)
+                }}
+                onRequestDeletion={() => {
+                  setFailureReason(null)
+                  setThreadPendingDeletion(thread)
+                }}
               />
             ))}
           </Stack>
         )}
       </Stack>
 
+      <RenameThreadModal
+        thread={threadPendingRename}
+        failureReason={failureReason}
+        onCancel={() => setThreadPendingRename(null)}
+        onConfirm={renameThread}
+      />
+
       <DeleteThreadModal
         thread={threadPendingDeletion}
         isDeleting={isDeleting}
         failureReason={failureReason}
-        onCancel={cancelDeletion}
+        onCancel={() => setThreadPendingDeletion(null)}
         onConfirm={confirmDeletion}
       />
     </Container>
   )
+}
+
+function describeFailure(error: unknown, fallback: string) {
+  return error instanceof Error ? `${fallback} ${error.message}` : fallback
 }

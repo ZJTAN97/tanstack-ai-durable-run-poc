@@ -22,6 +22,20 @@
       "when": 1786461577504,
       "tag": "0002_flat_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786853954751,
+      "tag": "0003_heavy_the_captain",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786853960083,
+      "tag": "0004_tiny_mojo",
+      "breakpoints": true
     }
   ]
 }

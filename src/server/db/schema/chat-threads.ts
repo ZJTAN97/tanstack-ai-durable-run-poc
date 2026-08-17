@@ -11,15 +11,21 @@ import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
  * `updatedAt` and `title` are ours, not the library's — the stores never read
  * columns they do not know about.
  *
- * `title` is nullable because a thread exists from the moment it is addressed,
- * which is before anyone has said anything to name it. It is derived from the
- * conversation rather than typed, so it is a cache of the transcript and not an
- * independent fact — the write path recomputes it on every save rather than
- * treating the stored value as authoritative.
+ * `title` is nullable because a thread exists from the moment it is created,
+ * which is before anyone has said anything to name it. It is the name a user
+ * gave, and nothing derives it: the server never writes it, and a save leaves
+ * whatever is stored alone. A thread with no title is untitled, and "Untitled"
+ * on screen is a display fallback rather than a stored value.
+ *
+ * `userId` exists for sync bucketing — it is what resolves which threads a
+ * device replicates — and is stamped server-side from the presented token. A
+ * device never states who it is. Runs carry no equivalent column: their owner
+ * is knowable only through their thread.
  */
 export const chatThreads = pgTable('chat_threads', {
   threadId: text('thread_id').primaryKey(),
   title: text('title'),
+  userId: text('user_id').notNull().default('anonymous'),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),

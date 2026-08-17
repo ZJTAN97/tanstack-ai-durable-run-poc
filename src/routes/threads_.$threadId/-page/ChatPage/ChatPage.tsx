@@ -22,7 +22,7 @@ export function ChatPage() {
 
   return (
     <div className={classes.shell}>
-      <ChatHeader />
+      <ChatHeader threadId={addressedThread.data} />
       <Conversation
         key={addressedThread.data}
         threadId={addressedThread.data}

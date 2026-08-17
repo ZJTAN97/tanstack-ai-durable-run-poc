@@ -11,6 +11,9 @@ services:
       - '5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    # Logical replication is what PowerSync tails. Without it the sync service
+    # starts and then fails to create its replication slot.
+    command: ['postgres', '-c', 'wal_level=logical']
     # The app parses DATABASE_URL at boot and opens a pool on the first request,
     # so a container that is up but not yet accepting connections would surface
     # as a connection error rather than a wait. Gate readiness on the server.
@@ -19,6 +22,41 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Sync's server half. It is not a library in the app server: it tails Postgres
+  # logical replication on its own and serves buckets over its own port, which is
+  # why the app only ever talks to it to mint a token.
+  powersync:
+    image: journeyapps/powersync-service:1.24.0
+    container_name: durable-run-poc-powersync
+    restart: unless-stopped
+    command: ['start', '-r', 'unified']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '8090:8090'
+    volumes:
+      - ./powersync:/config
+    environment:
+      POWERSYNC_CONFIG_PATH: /config/service.yaml
+      PS_PORT: 8090
+      PS_DATA_SOURCE_URI: postgresql://durable_run:durable_run@postgres:5432/durable_run
+      PS_STORAGE_URI: postgresql://durable_run:durable_run@postgres:5432/durable_run
+      # The same secret the app signs tokens with. Kept out of this file so the
+      # two halves cannot drift: both read it from .env.
+      PS_JWT_KEY: ${POWERSYNC_JWT_SECRET:?copy .env.example to .env and set POWERSYNC_JWT_SECRET}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:8090/probes/liveness').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
 
 volumes:
   postgres-data:

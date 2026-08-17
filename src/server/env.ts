@@ -11,6 +11,18 @@ const environmentSchema = z.object({
       'postgres',
       'must be a postgres:// or postgresql:// connection string',
     ),
+  // Where the browser reaches the sync service. Handed to the client by the
+  // token endpoint rather than baked in as a VITE_ variable, so the endpoint
+  // stays the single thing to change when sync moves.
+  POWERSYNC_URL: z.url(),
+  // Base64url, because it is used verbatim as the `k` of the HS256 JWK in
+  // powersync/service.yaml. Encoding it here rather than in the YAML is what
+  // keeps the signer and the verifier reading one value. 43 characters is 256
+  // bits, the shortest key HS256 should be trusted with.
+  POWERSYNC_JWT_SECRET: z
+    .string()
+    .min(43, 'must be at least 256 bits, base64url encoded')
+    .regex(/^[A-Za-z0-9_-]+$/, 'must be base64url encoded'),
   // How long a *finished* run stays replayable from its delivery log. Short by
   // default because the log is a transport buffer, not a record: the transcript
   // outlives it in `chat_messages`. Set it above the longest gap you expect

@@ -1,0 +1,1 @@
+ALTER TABLE "chat_threads" ADD COLUMN "user_id" text DEFAULT 'anonymous' NOT NULL;

@@ -1,6 +1,7 @@
 allowBuilds:
-  # Its only install script is an optional type-availability check; the
-  # published package already ships compiled output.
+  # Its postinstall re-downloads libpowersync{,-async}.wasm from GitHub, and the
+  # published tarball already contains both. Skipping it keeps installs offline.
+  '@journeyapps/wa-sqlite': false
   '@openrouter/sdk': false
   esbuild: true
   lightningcss: true

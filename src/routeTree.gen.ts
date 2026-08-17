@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api.chat'
+import { Route as ApiPowersyncTokenRouteImport } from './routes/api.powersync-token'
+import { Route as ApiPowersyncUploadRouteImport } from './routes/api.powersync-upload'
 import { Route as ThreadsThreadIdRouteRouteImport } from './routes/threads_.$threadId/route'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +25,16 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPowersyncTokenRoute = ApiPowersyncTokenRouteImport.update({
+  id: '/api/powersync-token',
+  path: '/api/powersync-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPowersyncUploadRoute = ApiPowersyncUploadRouteImport.update({
+  id: '/api/powersync-upload',
+  path: '/api/powersync-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ThreadsThreadIdRouteRoute = ThreadsThreadIdRouteRouteImport.update({
   id: '/threads_/$threadId',
   path: '/threads/$threadId',
@@ -33,30 +45,54 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/threads/$threadId': typeof ThreadsThreadIdRouteRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/powersync-token': typeof ApiPowersyncTokenRoute
+  '/api/powersync-upload': typeof ApiPowersyncUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/threads/$threadId': typeof ThreadsThreadIdRouteRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/powersync-token': typeof ApiPowersyncTokenRoute
+  '/api/powersync-upload': typeof ApiPowersyncUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/threads_/$threadId': typeof ThreadsThreadIdRouteRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/powersync-token': typeof ApiPowersyncTokenRoute
+  '/api/powersync-upload': typeof ApiPowersyncUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/threads/$threadId' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/threads/$threadId'
+    | '/api/chat'
+    | '/api/powersync-token'
+    | '/api/powersync-upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/threads/$threadId' | '/api/chat'
-  id: '__root__' | '/' | '/threads_/$threadId' | '/api/chat'
+  to:
+    | '/'
+    | '/threads/$threadId'
+    | '/api/chat'
+    | '/api/powersync-token'
+    | '/api/powersync-upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/threads_/$threadId'
+    | '/api/chat'
+    | '/api/powersync-token'
+    | '/api/powersync-upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ThreadsThreadIdRouteRoute: typeof ThreadsThreadIdRouteRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPowersyncTokenRoute: typeof ApiPowersyncTokenRoute
+  ApiPowersyncUploadRoute: typeof ApiPowersyncUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +111,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/powersync-token': {
+      id: '/api/powersync-token'
+      path: '/api/powersync-token'
+      fullPath: '/api/powersync-token'
+      preLoaderRoute: typeof ApiPowersyncTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/powersync-upload': {
+      id: '/api/powersync-upload'
+      path: '/api/powersync-upload'
+      fullPath: '/api/powersync-upload'
+      preLoaderRoute: typeof ApiPowersyncUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/threads_/$threadId': {
       id: '/threads_/$threadId'
       path: '/threads/$threadId'
@@ -89,6 +139,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ThreadsThreadIdRouteRoute: ThreadsThreadIdRouteRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPowersyncTokenRoute: ApiPowersyncTokenRoute,
+  ApiPowersyncUploadRoute: ApiPowersyncUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

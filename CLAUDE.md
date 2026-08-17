@@ -20,6 +20,8 @@ pnpm db:studio    # drizzle-kit studio   — inspect data
 # Quality
 pnpm lint         # Biome check
 pnpm lint --write # Auto-fix
+pnpm typecheck    # tsc --noEmit; Biome does not type-check, and the SQLite
+                  # mirror's drift guard is a type error rather than a lint one
 
 # Build
 pnpm build && pnpm start
